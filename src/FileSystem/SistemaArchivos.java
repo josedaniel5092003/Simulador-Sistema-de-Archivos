@@ -42,4 +42,26 @@ public class SistemaArchivos {
         Proceso p = new Proceso(contadorProcesos++, operacion, objetivo);
         colaProcesos.enqueue(p);
     }
+    
+    public Disco getDisco() {
+    return disco;
+}
+
+    public Directorio getRoot() {
+        return root;
+    }
+
+    public void mostrarColaProcesos() {
+        if (colaProcesos.isEmpty()) {
+            System.out.println("(sin procesos en la cola)");
+            return;
+        }
+
+        var actual = colaProcesos.getHead();
+        while (actual != null) {
+            System.out.println(actual.getElement().toString());
+            actual = actual.getNext();
+        }
+    }
+
 }

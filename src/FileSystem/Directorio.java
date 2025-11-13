@@ -38,4 +38,8 @@ public class Directorio {
     public LinkedList<Directorio> getSubdirectorios() {
         return subdirectorios;
     }
+    
+    public String getNombre() {
+        return this.nombre;
+    }
 }
