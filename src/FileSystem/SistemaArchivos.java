@@ -54,6 +54,52 @@ public class SistemaArchivos {
     return true;
 }
 
+    public String leerArchivo(String nombre, Directorio dirActual) {
+    // 1️⃣ Buscar el archivo en el directorio actual
+    Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
+
+    if (archivo == null) {
+        return " El archivo \"" + nombre + "\" no existe en este directorio.";
+    }
+
+    // 2️⃣ Obtener información básica
+    StringBuilder info = new StringBuilder();
+    info.append(" Archivo: ").append(archivo.getNombre()).append("\n");
+    info.append(" Propietario: ").append(archivo.getOwner()).append("\n");
+    info.append(" Tamano: ").append(archivo.getTamanioBloques()).append(" bloques\n");
+
+    // 3️⃣ Obtener los bloques encadenados desde el disco
+    info.append(" Bloques: ").append(obtenerCadenaBloques(archivo.getPrimerBloque())).append("\n");
+
+    // 4️⃣ Mostrar por consola (opcional, para depuración)
+    System.out.println(info.toString());
+
+    // 5️⃣ Retornar la información (útil para mostrar en interfaz más adelante)
+    return info.toString();
+}
+
+    
+    private String obtenerCadenaBloques(int primerBloque) {
+    if (primerBloque == -1) {
+        return "[]";
+    }
+
+    StringBuilder sb = new StringBuilder("[");
+    int actual = primerBloque;
+    Disk.Bloque[] bloques = disco.getBloques(); // importa Disk.Bloque si hace falta
+    boolean primero = true;
+
+    while (actual != -1) {
+        if (!primero) sb.append(" -> ");
+        sb.append(actual);
+        primero = false;
+        actual = bloques[actual].getSiguiente();
+    }
+
+    sb.append("]");
+    return sb.toString();
+}
+    
 
     private void agregarProceso(String operacion, String objetivo) {
         Proceso p = new Proceso(contadorProcesos++, operacion, objetivo);

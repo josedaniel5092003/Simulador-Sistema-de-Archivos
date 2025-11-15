@@ -39,6 +39,67 @@ public class Directorio {
         return null; // si no lo encontró
     }
     
+       public boolean removerArchivo(Archivo objetivo) {
+        Nodo<Archivo> prev = null;
+        Nodo<Archivo> curr = archivos.getFirst();
+        int len = archivos.getLenght();
+
+        for (int i = 0; i < len && curr != null; i++) {
+            if (curr.getElement().equals(objetivo)) {
+                if (prev == null) {
+                    archivos.setFirst(curr.getNext());
+                    if (curr.getNext() == null) archivos.setLast(null);
+                } else {
+                    prev.setNext(curr.getNext());
+                    if (curr.getNext() == null) archivos.setLast(prev);
+                }
+                archivos.setLenght(archivos.getLenght() - 1);
+                return true;
+            }
+            prev = curr;
+            curr = curr.getNext();
+        }
+        return false;
+    }
+       
+       public Directorio buscarSubdirectorio(String nombreDir) {
+        Nodo<Directorio> nodo = subdirectorios.getFirst();
+        int total = subdirectorios.getLenght();
+
+        for (int i = 0; i < total && nodo != null; i++) {
+            Directorio d = nodo.getElement();
+            if (d.getNombre().equalsIgnoreCase(nombreDir)) {
+                return d;
+            }
+            nodo = nodo.getNext();
+        }
+        return null;
+    }
+       
+        /** Elimina un subdirectorio específico del actual */
+    public boolean removerSubdirectorio(Directorio objetivo) {
+        Nodo<Directorio> prev = null;
+        Nodo<Directorio> curr = subdirectorios.getFirst();
+        int len = subdirectorios.getLenght();
+
+        for (int i = 0; i < len && curr != null; i++) {
+            if (curr.getElement().equals(objetivo)) {
+                if (prev == null) {
+                    subdirectorios.setFirst(curr.getNext());
+                    if (curr.getNext() == null) subdirectorios.setLast(null);
+                } else {
+                    prev.setNext(curr.getNext());
+                    if (curr.getNext() == null) subdirectorios.setLast(prev);
+                }
+                subdirectorios.setLenght(subdirectorios.getLenght() - 1);
+                return true;
+            }
+            prev = curr;
+            curr = curr.getNext();
+        }
+        return false;
+    }
+    
 
     public void agregarArchivo(Archivo archivo) {
         archivos.insertFinal(archivo);

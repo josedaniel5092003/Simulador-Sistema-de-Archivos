@@ -14,21 +14,14 @@ public class SimuladorSistemaDeArchivos {
         SistemaArchivos sistema = new SistemaArchivos(20);
         Directorio root = sistema.getRoot();
 
-        // Crear algunos datos de prueba
-        Directorio docs = new Directorio("Documentos", root);
-        root.agregarSubdirectorio(docs);
+        // Crear algunos archivos
+        sistema.crearArchivo("documento.txt", 3, root, "admin");
+        sistema.crearArchivo("video.mp4", 5, root, "user1");
 
-        Directorio img = new Directorio("Imagenes", root);
-        root.agregarSubdirectorio(img);
-
-        sistema.crearArchivo("informe.pdf", 3, docs, "admin");
-        sistema.crearArchivo("informe.pdf", 3, docs, "admin");
-        sistema.crearArchivo("foto.png", 4, img, "admin");
-        sistema.crearArchivo("logo.svg", 2, img, "admin");
-
-        // Mostrar la interfaz gráfica directamente
-        SimuladorSistArchivos simulador = new SimuladorSistArchivos(sistema);
-        simulador.setVisible(true);
+        // Leer archivos
+        sistema.leerArchivo("documento.txt", root);
+        sistema.leerArchivo("video.mp4", root);
+        sistema.leerArchivo("noExiste.txt", root); // debe mostrar error
         
         // Mostrar archivos en consola
         System.out.println("Contenido del sistema de archivos:");

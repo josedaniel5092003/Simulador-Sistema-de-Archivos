@@ -34,4 +34,16 @@ public class Archivo {
     public int getTamanioBloques() {
         return tamanioBloques;
     }
+    
+    public String getOwner() {
+    return owner;
+}
+
+public String getColor() {
+    return color;
+}
+
+public void setNombre(String nuevoNombre) {
+    this.nombre = nuevoNombre;
+}
 }
