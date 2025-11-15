@@ -22,6 +22,7 @@ public class SimuladorSistemaDeArchivos {
         root.agregarSubdirectorio(img);
 
         sistema.crearArchivo("informe.pdf", 3, docs, "admin");
+        sistema.crearArchivo("informe.pdf", 3, docs, "admin");
         sistema.crearArchivo("foto.png", 4, img, "admin");
         sistema.crearArchivo("logo.svg", 2, img, "admin");
 

@@ -24,19 +24,36 @@ public class SistemaArchivos {
         colaProcesos = new Queue();
     }
 
-    public void crearArchivo(String nombre, int bloques, Directorio dirActual, String usuario) {
-        int inicio = disco.asignarBloques(bloques);
-
-        if (inicio == -1) {
-            System.out.println("No hay espacio para crear el archivo");
-            return;
-        }
-
-        Archivo nuevo = new Archivo(nombre, bloques, inicio, usuario);
-        dirActual.agregarArchivo(nuevo);
-
-        agregarProceso("create", nombre);
+    public boolean crearArchivo(String nombre, int bloques, Directorio dirActual, String usuario) {
+    // 1️⃣ Validar nombre repetido
+    if (dirActual.buscarArchivoPorNombre(nombre) != null) {
+        System.out.println("Ya existe un archivo con ese nombre en este directorio.");
+        return false;
     }
+
+    // 2️⃣ Intentar asignar bloques en el disco
+    int inicio = disco.asignarBloques(bloques);
+
+    if (inicio == -1) {
+        System.out.println("No hay espacio disponible para crear el archivo: " + nombre);
+        return false;
+    }
+
+    // 3️⃣ Crear y agregar el archivo al directorio
+    Archivo nuevo = new Archivo(nombre, bloques, inicio, usuario);
+    dirActual.agregarArchivo(nuevo);
+
+    // 4️⃣ Agregar proceso (opcional)
+    agregarProceso("create", nombre);
+
+    // 5️⃣ Mensaje informativo
+    System.out.println("Archivo creado: " + nombre + 
+                       " | Bloques: " + bloques + 
+                       " | Primer bloque: " + inicio);
+
+    return true;
+}
+
 
     private void agregarProceso(String operacion, String objetivo) {
         Proceso p = new Proceso(contadorProcesos++, operacion, objetivo);

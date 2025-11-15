@@ -9,6 +9,7 @@ package FileSystem;
  * @author Jose
  */
 import DataStruct.LinkedList;
+import DataStruct.Nodo;
 
 public class Directorio {
     private String nombre;
@@ -22,6 +23,22 @@ public class Directorio {
         this.subdirectorios = new LinkedList<>();
         this.archivos = new LinkedList<>();
     }
+    
+    public Archivo buscarArchivoPorNombre(String nombreArchivo) {
+        Nodo<Archivo> nodo = archivos.getFirst();   // primer nodo de la lista
+        int total = archivos.getLenght();           // número de elementos
+
+        for (int i = 0; i < total && nodo != null; i++) {
+            Archivo a = nodo.getElement();          // obtenemos el objeto Archivo
+            if (a.getNombre().equalsIgnoreCase(nombreArchivo)) {
+                return a;                           // encontrado ✅
+            }
+            nodo = nodo.getNext();                  // avanzar al siguiente
+        }
+
+        return null; // si no lo encontró
+    }
+    
 
     public void agregarArchivo(Archivo archivo) {
         archivos.insertFinal(archivo);
