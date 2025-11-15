@@ -5,73 +5,28 @@ import FileSystem.Archivo;
 import FileSystem.Directorio;
 import FileSystem.SistemaArchivos;
 import GUI.SimuladorSistArchivos;
+import Scheduler.PlanificadorES;
 
 public class SimuladorSistemaDeArchivos {
 
     public static void main(String[] args) {
 
-        // Crear el sistema de archivos
-        SistemaArchivos sistema = new SistemaArchivos(85);
+        SistemaArchivos sistema = new SistemaArchivos(40);
+
         Directorio root = sistema.getRoot();
 
-        // Crear algunos datos de prueba
-        Directorio escritorio = new Directorio("Escritorio", root);
-        root.agregarSubdirectorio(escritorio);
-        
-        Directorio docs = new Directorio("Documentos", root);
-        root.agregarSubdirectorio(docs);
+        // Crear proceso para un directorio
+        sistema.crearProceso("p1","createDir", "Documentos", 0, root, "admin");
 
-        Directorio img = new Directorio("Imagenes", root);
-        root.agregarSubdirectorio(img);
+        // Crear proceso para un archivo
+        sistema.crearProceso("p2","createFile", "informe.pdf", 3, root, "admin");
 
-        sistema.crearArchivo("informe.pdf", 3, docs, "admin");
-        sistema.crearArchivo("foto.png", 4, img, "admin");
-        sistema.crearArchivo("logo.svg", 2, img, "admin");
-        
-        // Crear más directorios
-        Directorio musica = new Directorio("Musica", root);
-        root.agregarSubdirectorio(musica);
-
-        Directorio videos = new Directorio("Videos", root);
-        root.agregarSubdirectorio(videos);
-
-        Directorio proyectos = new Directorio("Proyectos", escritorio);
-        escritorio.agregarSubdirectorio(proyectos);
-
-        Directorio compresos = new Directorio("Comprimidos", docs);
-        docs.agregarSubdirectorio(compresos);
-
-        Directorio clases = new Directorio("Clases", escritorio);
-        proyectos.agregarSubdirectorio(clases);
-
-        Directorio reportes = new Directorio("Reportes", docs);
-        docs.agregarSubdirectorio(reportes);
-
-
-        // Crear archivos según extensiones disponibles
-        sistema.crearArchivo("cancion1.mp3", 5, musica, "admin");
-        sistema.crearArchivo("cancion2.mp3", 4, musica, "admin");
-        sistema.crearArchivo("foto_familia.jpg", 3, img, "admin");
-        sistema.crearArchivo("wallpaper.png", 4, img, "admin");
-        sistema.crearArchivo("video1.mp4", 10, videos, "admin");
-        sistema.crearArchivo("video2.mp4", 8, videos, "admin");
-        sistema.crearArchivo("datos.csv", 2, docs, "admin");
-        sistema.crearArchivo("guia.doc", 3, docs, "admin");
-        sistema.crearArchivo("manual.pdf", 4, reportes, "admin");
-        sistema.crearArchivo("reporte_final.pdf", 5, reportes, "admin");
-        sistema.crearArchivo("clase1.java", 2, clases, "admin");
-        sistema.crearArchivo("clase2.java", 2, clases, "admin");
-        sistema.crearArchivo("instalador.exe", 6, escritorio, "admin");
-        sistema.crearArchivo("comprimido.rar", 3, compresos, "admin");
-        sistema.crearArchivo("archivos.zip", 4, compresos, "admin");
-        sistema.crearArchivo("presentacion.ppt", 3, proyectos, "admin");
-        sistema.crearArchivo("hoja_estilos.xsl", 2, proyectos, "admin");
-        sistema.crearArchivo("descripcion.txt", 1, escritorio, "admin");
-        sistema.crearArchivo("notas.txt", 1, docs, "admin");
-        sistema.crearArchivo("banner.svg", 2, img, "admin");
-
-        // Archivo de extensión desconocida -> usará default.png
-        sistema.crearArchivo("archivo.rtf", 2, docs, "admin");
+        // Ejecutar todos los procesos
+        while (sistema.hayProcesosPendientes()) {
+            PlanificadorES planificador = new PlanificadorES(sistema);
+            planificador.ejecutarFIFO();
+            
+        }
 
 
         // Mostrar la interfaz gráfica directamente

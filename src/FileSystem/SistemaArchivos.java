@@ -1,117 +1,60 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package FileSystem;
 
-/**
- *
- * @author Jose
- */
 import DataStruct.Queue;
 import Process.Proceso;
 import Disk.Disco;
 
 public class SistemaArchivos {
+
     private Disco disco;
     private Directorio root;
     private Queue colaProcesos;
     private int contadorProcesos = 1;
 
+    // proceso del sistema para el root
+    Proceso pRoot = new Proceso(
+        0,
+        "system proces",
+        "systemInit",
+        "root",
+        0,
+        null,
+        "system"
+    );
+
     public SistemaArchivos(int tamDisco) {
         disco = new Disco(tamDisco);
-        root = new Directorio("root", null);
+        root = new Directorio("root", null, pRoot);
         colaProcesos = new Queue();
     }
 
-    public boolean crearArchivo(String nombre, int bloques, Directorio dirActual, String usuario) {
-    // 1️⃣ Validar nombre repetido
-    if (dirActual.buscarArchivoPorNombre(nombre) != null) {
-        System.out.println("Ya existe un archivo con ese nombre en este directorio.");
-        return false;
-    }
+    // -----------------------------
+    //   GESTIÓN DE PROCESOS
+    // -----------------------------
 
-    // 2️⃣ Intentar asignar bloques en el disco
-    int inicio = disco.asignarBloques(bloques);
+    public void crearProceso(String nombreProc, String operacion, String nombre, int tamanio, Directorio dir, String usuario) {
 
-    if (inicio == -1) {
-        System.out.println("No hay espacio disponible para crear el archivo: " + nombre);
-        return false;
-    }
+        Proceso p = new Proceso(
+            contadorProcesos++,
+            nombreProc,
+            operacion,     // createFile, createDir, read, delete...
+            nombre,
+            tamanio,       // 0 si no aplica
+            dir,           // directorio destino
+            usuario
+        );
 
-    // 3️⃣ Crear y agregar el archivo al directorio
-    Archivo nuevo = new Archivo(nombre, bloques, inicio, usuario);
-    dirActual.agregarArchivo(nuevo);
-
-    // 4️⃣ Agregar proceso (opcional)
-    agregarProceso("create", nombre);
-
-    // 5️⃣ Mensaje informativo
-    System.out.println("Archivo creado: " + nombre + 
-                       " | Bloques: " + bloques + 
-                       " | Primer bloque: " + inicio);
-
-    return true;
-}
-
-    public String leerArchivo(String nombre, Directorio dirActual) {
-    // 1️⃣ Buscar el archivo en el directorio actual
-    Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
-
-    if (archivo == null) {
-        return " El archivo \"" + nombre + "\" no existe en este directorio.";
-    }
-
-    // 2️⃣ Obtener información básica
-    StringBuilder info = new StringBuilder();
-    info.append(" Archivo: ").append(archivo.getNombre()).append("\n");
-    info.append(" Propietario: ").append(archivo.getOwner()).append("\n");
-    info.append(" Tamano: ").append(archivo.getTamanioBloques()).append(" bloques\n");
-
-    // 3️⃣ Obtener los bloques encadenados desde el disco
-    info.append(" Bloques: ").append(obtenerCadenaBloques(archivo.getPrimerBloque())).append("\n");
-
-    // 4️⃣ Mostrar por consola (opcional, para depuración)
-    System.out.println(info.toString());
-
-    // 5️⃣ Retornar la información (útil para mostrar en interfaz más adelante)
-    return info.toString();
-}
-
-    
-    private String obtenerCadenaBloques(int primerBloque) {
-    if (primerBloque == -1) {
-        return "[]";
-    }
-
-    StringBuilder sb = new StringBuilder("[");
-    int actual = primerBloque;
-    Disk.Bloque[] bloques = disco.getBloques(); // importa Disk.Bloque si hace falta
-    boolean primero = true;
-
-    while (actual != -1) {
-        if (!primero) sb.append(" -> ");
-        sb.append(actual);
-        primero = false;
-        actual = bloques[actual].getSiguiente();
-    }
-
-    sb.append("]");
-    return sb.toString();
-}
-    
-
-    private void agregarProceso(String operacion, String objetivo) {
-        Proceso p = new Proceso(contadorProcesos++, operacion, objetivo);
         colaProcesos.enqueue(p);
+        System.out.println("Proceso agregado a la cola: " + p);
     }
-    
-    public Disco getDisco() {
-    return disco;
-}
 
-    public Directorio getRoot() {
-        return root;
+    public Proceso getSiguienteProceso() {
+        if (colaProcesos.isEmpty()) return null;
+        return (Proceso) colaProcesos.dispatch();
+    }
+
+    public boolean hayProcesosPendientes() {
+        return !colaProcesos.isEmpty();
     }
 
     public void mostrarColaProcesos() {
@@ -120,11 +63,160 @@ public class SistemaArchivos {
             return;
         }
 
-        var actual = colaProcesos.getHead();
-        while (actual != null) {
-            System.out.println(actual.getElement().toString());
-            actual = actual.getNext();
+        var nodo = colaProcesos.getHead();
+        while (nodo != null) {
+            System.out.println(nodo.getElement());
+            nodo = nodo.getNext();
         }
     }
 
+    // ---------------------------------------
+    //   EJECUCIÓN DE OPERACIONES DEL PROCESO
+    // ---------------------------------------
+
+    public boolean ejecutarOperacion(Proceso p) {
+
+        switch (p.getOperacion()) {
+
+            case "createFile":
+                return crearArchivo(
+                    p.getNombre(),
+                    p.getTamBloques(),
+                    p.getDestino(),
+                    p
+                );
+
+            case "createDir":
+                return crearDirectorio(
+                    p.getNombreProceso(),
+                    p.getNombre(),
+                    p.getDestino(),
+                    p.getUsuario()
+                );
+
+            case "read":
+                System.out.println(leerArchivo(p.getNombre(), p.getDestino()));
+                return true;
+
+            case "delete":
+                return eliminarArchivo(
+                    p.getNombre(),
+                    p.getDestino()
+                );
+
+            default:
+                System.out.println("Operación no reconocida");
+                return false;
+        }
+    }
+
+    // -----------------------------
+    //   CRUD REAL DEL SISTEMA
+    // -----------------------------
+
+    public boolean crearArchivo(String nombre, int bloques, Directorio dirActual, Proceso proceso) {
+
+        if (dirActual.buscarArchivoPorNombre(nombre) != null) {
+            System.out.println("Ya existe un archivo con ese nombre.");
+            return false;
+        }
+
+        int inicio = disco.asignarBloques(bloques);
+
+        if (inicio == -1) {
+            System.out.println("No hay espacio disponible.");
+            return false;
+        }
+
+        Archivo nuevo = new Archivo(nombre, bloques, inicio, proceso);
+        dirActual.agregarArchivo(nuevo);
+
+        System.out.println("Archivo creado: " + nombre +
+                           " | Bloques: " + bloques +
+                           " | Primer bloque: " + inicio);
+
+        return true;
+    }
+
+
+    public boolean crearDirectorio(String nombreProc, String nombre, Directorio padre, String usuario) {
+
+        if (padre.buscarSubdirectorio(nombre) != null) {
+            System.out.println("Ya existe un directorio con ese nombre.");
+            return false;
+        }
+
+        Proceso creador = new Proceso(
+            -1, nombreProc, "createDir", nombre, 0, padre, usuario
+        );
+
+        Directorio nuevo = new Directorio(nombre, padre, creador);
+        padre.agregarSubdirectorio(nuevo);
+
+        System.out.println("Directorio creado: " + nombre);
+        return true;
+    }
+
+
+    public String leerArchivo(String nombre, Directorio dirActual) {
+
+        Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
+
+        if (archivo == null) {
+            return "El archivo \"" + nombre + "\" no existe.";
+        }
+
+        StringBuilder info = new StringBuilder();
+        info.append("Archivo: ").append(archivo.getNombre()).append("\n");
+        info.append("Propietario: ").append(archivo.getOwner()).append("\n");
+        info.append("Tamaño: ").append(archivo.getTamanioBloques()).append(" bloques\n");
+        info.append("Bloques: ").append(obtenerCadenaBloques(archivo.getPrimerBloque())).append("\n");
+
+        return info.toString();
+    }
+
+
+    public boolean eliminarArchivo(String nombre, Directorio dirActual) {
+        Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
+
+        if (archivo == null) {
+            System.out.println("El archivo no existe.");
+            return false;
+        }
+
+        disco.liberarBloques(archivo.getPrimerBloque());
+        dirActual.removerArchivo(archivo);
+
+        System.out.println("Archivo eliminado: " + nombre);
+        return true;
+    }
+
+
+    private String obtenerCadenaBloques(int primerBloque) {
+
+        if (primerBloque == -1) return "[]";
+
+        StringBuilder sb = new StringBuilder("[");
+        int actual = primerBloque;
+        Disk.Bloque[] bloques = disco.getBloques();
+        boolean primero = true;
+
+        while (actual != -1) {
+            if (!primero) sb.append(" -> ");
+            sb.append(actual);
+            primero = false;
+            actual = bloques[actual].getSiguiente();
+        }
+
+        sb.append("]");
+        return sb.toString();
+    }
+
+    public Disco getDisco() {
+        return disco;
+    }
+
+    public Directorio getRoot() {
+        return root;
+    }
 }

@@ -10,17 +10,20 @@ package FileSystem;
  */
 import DataStruct.LinkedList;
 import DataStruct.Nodo;
+import Process.Proceso;
 
 public class Directorio {
     private String nombre;
     private Directorio padre;
     private LinkedList<Directorio> subdirectorios;
+    private Proceso owner;
     private LinkedList<Archivo> archivos;
 
-    public Directorio(String nombre, Directorio padre) {
+    public Directorio(String nombre, Directorio padre, Proceso owner) {
         this.nombre = nombre;
         this.padre = padre;
         this.subdirectorios = new LinkedList<>();
+        this.owner = owner;
         this.archivos = new LinkedList<>();
     }
     
@@ -100,6 +103,39 @@ public class Directorio {
         return false;
     }
     
+    public Directorio buscarDirectorioPorNombre(String nombreBuscado) {
+        if (subdirectorios == null) return null;
+
+        var nodo = subdirectorios.getFirst(); // tu nodo de lista personalizada
+
+        while (nodo != null) {
+            Directorio dir = (Directorio) nodo.getElement();
+
+            if (dir.getNombre().equals(nombreBuscado)) {
+                return dir;
+            }
+
+            nodo = nodo.getNext();
+        }
+
+        return null;
+    }
+
+    
+    public boolean agregarDirectorio(Directorio nuevo) {
+
+        // Evitar duplicados en el mismo nivel
+        if (buscarDirectorioPorNombre(nuevo.getNombre()) != null) {
+            System.out.println("Ya existe un directorio con ese nombre en este nivel.");
+            return false;
+        }
+
+        subdirectorios.insertFinal(nuevo);
+        nuevo.setPadre(this);
+
+        return true;
+    }
+    
 
     public void agregarArchivo(Archivo archivo) {
         archivos.insertFinal(archivo);
@@ -115,6 +151,14 @@ public class Directorio {
 
     public LinkedList<Directorio> getSubdirectorios() {
         return subdirectorios;
+    }
+    
+    public Directorio getPadre() {
+        return this.padre;
+    }
+    
+    public void setPadre(Directorio padre) {
+        this.padre = padre;
     }
     
     public String getNombre() {

@@ -4,6 +4,8 @@
  */
 package FileSystem;
 
+import Process.Proceso;
+
 /**
  *
  * @author Jose
@@ -12,10 +14,10 @@ public class Archivo {
     private String nombre;
     private int tamanioBloques;
     private int primerBloque;
-    private String owner;  // opcional
+    private Proceso owner;  // proceso que lo creó
     private String color;  // opcional para GUI
 
-    public Archivo(String nombre, int tamanioBloques, int primerBloque, String owner) {
+    public Archivo(String nombre, int tamanioBloques, int primerBloque, Proceso owner) {
         this.nombre = nombre;
         this.tamanioBloques = tamanioBloques;
         this.primerBloque = primerBloque;
@@ -35,7 +37,7 @@ public class Archivo {
         return tamanioBloques;
     }
     
-    public String getOwner() {
+    public Proceso getOwner() {
     return owner;
 }
 

@@ -193,8 +193,10 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
                 archivo.getNombre(),
                 archivo.getTamanioBloques(),
                 archivo.getPrimerBloque(),
-                //archivo.getProcesoCreador()
+                archivo.getOwner().getNombreProceso()
+                   
             });
+            System.out.println(archivo.getOwner().getNombreProceso());
         }
 
         // Subdirectorios
