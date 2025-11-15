@@ -53,7 +53,7 @@ public class LinkedList<E> {
         length++;
     }
     
-     public Process getElementIn(int posicion) {
+     public Object getElementIn(int posicion) {
         if (posicion < 0 || posicion >= length) {
             System.out.println("La posición debe estar entre 0 y " + (length - 1));
         }
@@ -166,7 +166,7 @@ public class LinkedList<E> {
      * @return Una lista ordenada de cadenas.
      */
     public LinkedList<String> ordenarLista(LinkedList<String> lista) {
-        String[] arr = new String[lista.getLenght()];
+        String[] arr = new String[lista.getLength()];
         Nodo<String> actual = lista.getFirst();
         int index = 0;
         while (actual != null) {
@@ -253,7 +253,7 @@ public class LinkedList<E> {
      *
      * @return un <code>int</code> con la longitud de la lista.
      */
-    public int getLenght() {
+    public int getLength() {
         return length;
     }
 
@@ -262,7 +262,7 @@ public class LinkedList<E> {
      *
      * @param length longitud de la lista.
      */
-    public void setLenght(int length) {
+    public void setLength(int length) {
         this.length = length;
     }
     

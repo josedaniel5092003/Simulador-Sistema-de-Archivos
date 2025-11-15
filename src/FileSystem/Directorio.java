@@ -26,7 +26,7 @@ public class Directorio {
     
     public Archivo buscarArchivoPorNombre(String nombreArchivo) {
         Nodo<Archivo> nodo = archivos.getFirst();   // primer nodo de la lista
-        int total = archivos.getLenght();           // número de elementos
+        int total = archivos.getLength();           // número de elementos
 
         for (int i = 0; i < total && nodo != null; i++) {
             Archivo a = nodo.getElement();          // obtenemos el objeto Archivo
@@ -42,7 +42,7 @@ public class Directorio {
        public boolean removerArchivo(Archivo objetivo) {
         Nodo<Archivo> prev = null;
         Nodo<Archivo> curr = archivos.getFirst();
-        int len = archivos.getLenght();
+        int len = archivos.getLength();
 
         for (int i = 0; i < len && curr != null; i++) {
             if (curr.getElement().equals(objetivo)) {
@@ -53,7 +53,7 @@ public class Directorio {
                     prev.setNext(curr.getNext());
                     if (curr.getNext() == null) archivos.setLast(prev);
                 }
-                archivos.setLenght(archivos.getLenght() - 1);
+                archivos.setLength(archivos.getLength() - 1);
                 return true;
             }
             prev = curr;
@@ -64,7 +64,7 @@ public class Directorio {
        
        public Directorio buscarSubdirectorio(String nombreDir) {
         Nodo<Directorio> nodo = subdirectorios.getFirst();
-        int total = subdirectorios.getLenght();
+        int total = subdirectorios.getLength();
 
         for (int i = 0; i < total && nodo != null; i++) {
             Directorio d = nodo.getElement();
@@ -80,7 +80,7 @@ public class Directorio {
     public boolean removerSubdirectorio(Directorio objetivo) {
         Nodo<Directorio> prev = null;
         Nodo<Directorio> curr = subdirectorios.getFirst();
-        int len = subdirectorios.getLenght();
+        int len = subdirectorios.getLength();
 
         for (int i = 0; i < len && curr != null; i++) {
             if (curr.getElement().equals(objetivo)) {
@@ -91,7 +91,7 @@ public class Directorio {
                     prev.setNext(curr.getNext());
                     if (curr.getNext() == null) subdirectorios.setLast(prev);
                 }
-                subdirectorios.setLenght(subdirectorios.getLenght() - 1);
+                subdirectorios.setLength(subdirectorios.getLength() - 1);
                 return true;
             }
             prev = curr;
@@ -120,4 +120,10 @@ public class Directorio {
     public String getNombre() {
         return this.nombre;
     }
+    
+    @Override
+    public String toString() {
+        return nombre;
+    }
+
 }

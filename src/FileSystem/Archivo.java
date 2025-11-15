@@ -39,11 +39,17 @@ public class Archivo {
     return owner;
 }
 
-public String getColor() {
-    return color;
-}
+    public String getColor() {
+        return color;
+    }
 
-public void setNombre(String nuevoNombre) {
-    this.nombre = nuevoNombre;
-}
+    public void setNombre(String nuevoNombre) {
+        this.nombre = nuevoNombre;
+    }
+
+    @Override
+    public String toString() {
+        return nombre;
+    }
+
 }
