@@ -22,7 +22,8 @@ public class SimuladorSistemaDeArchivos {
         // Ejecutar procesos de creación de directorios de nivel 1
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
-            planificador.ejecutarFIFO();
+            //planificador.ejecutarFIFO();
+            planificador.ejecutarLIFO();
         }
         
         // --- OBTENER REFERENCIAS DE NIVEL 1 ---
@@ -44,7 +45,8 @@ public class SimuladorSistemaDeArchivos {
         // Ejecutar procesos de Documentos
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
-            planificador.ejecutarFIFO();
+            //planificador.ejecutarFIFO();
+            planificador.ejecutarLIFO();
         }
 
         // --- OBTENER REFERENCIAS DE SEGUNDO NIVEL ---
@@ -71,7 +73,8 @@ public class SimuladorSistemaDeArchivos {
         // Ejecutar los procesos restantes (p8 a p13)
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
-            planificador.ejecutarFIFO();
+            //planificador.ejecutarFIFO();
+            planificador.ejecutarLIFO();
         }
 
         // --- VERIFICACIÓN DE SUB-SUBDIRECTORIO ---
@@ -87,7 +90,8 @@ public class SimuladorSistemaDeArchivos {
         // Ejecutar el último proceso
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
-            planificador.ejecutarFIFO();
+            //planificador.ejecutarFIFO();
+            planificador.ejecutarLIFO();
         }
 
         // Mostrar la interfaz gráfica directamente

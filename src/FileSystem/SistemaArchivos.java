@@ -220,4 +220,8 @@ public class SistemaArchivos {
     public Directorio getRoot() {
         return root;
     }
+    
+    public Queue getColaProcesos() {
+    return colaProcesos;
+}
 }
