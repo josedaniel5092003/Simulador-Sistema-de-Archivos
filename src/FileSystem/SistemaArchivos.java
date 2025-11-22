@@ -30,9 +30,17 @@ public class SistemaArchivos {
 
     // -----------------------------
     //   GESTIÓN DE PROCESOS
-    // -----------------------------
+    // ----------------------------
 
-    public void crearProceso(String nombreProc, String operacion, String nombre, int tamanio, Directorio dir, String usuario) {
+    public void crearProceso(String nombreProc, String operacion, String nombre, int tamanio, String nombreDirectorio, String usuario) {
+
+        // Buscar el directorio existente por nombre
+        Directorio directorio = root.buscarDirectorioPorNombre(nombreDirectorio);
+
+        if (directorio == null) {
+            System.out.println("Error: El directorio " + nombreDirectorio + " no existe");
+            return;
+        }
 
         Proceso p = new Proceso(
             contadorProcesos++,
@@ -40,7 +48,7 @@ public class SistemaArchivos {
             operacion,     // createFile, createDir, read, delete...
             nombre,
             tamanio,       // 0 si no aplica
-            dir,           // directorio destino
+            directorio,    // directorio destino encontrado
             usuario
         );
 

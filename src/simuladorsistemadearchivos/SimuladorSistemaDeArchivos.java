@@ -14,12 +14,18 @@ public class SimuladorSistemaDeArchivos {
         SistemaArchivos sistema = new SistemaArchivos(40);
 
         Directorio root = sistema.getRoot();
+        String rootName = root.getNombre();
 
         // Crear proceso para un directorio
-        sistema.crearProceso("p1","createDir", "Documentos", 0, root, "admin");
+        sistema.crearProceso("p1","createDir", "Documentos", 0, "root", "admin");
+        sistema.crearProceso("p2","createDir", "Musica", 0, "root", "admin");
 
         // Crear proceso para un archivo
-        sistema.crearProceso("p2","createFile", "informe.pdf", 3, root, "admin");
+        sistema.crearProceso("p3","createFile", "informe.pdf", 3, "Documentos", "admin");
+        sistema.crearProceso("p4","createFile", "test.txt", 3, "Documentos", "admin");
+        sistema.crearProceso("p5","createFile", "resumen.pdf", 3, "Documentos", "admin");
+        sistema.crearProceso("p6","createFile", "23trucos.mp3", 3, "Musica", "admin");
+        
 
         // Ejecutar todos los procesos
         while (sistema.hayProcesosPendientes()) {

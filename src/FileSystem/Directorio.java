@@ -107,6 +107,7 @@ public class Directorio {
         if (subdirectorios == null) return null;
 
         var nodo = subdirectorios.getFirst(); // tu nodo de lista personalizada
+        subdirectorios.toString();
 
         while (nodo != null) {
             Directorio dir = (Directorio) nodo.getElement();
