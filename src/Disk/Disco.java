@@ -19,6 +19,7 @@ public class Disco {
             bloques[i] = new Bloque(i);
         }
     }
+    private int headPosition = 0;  // inicia en 0 (o donde quieras)
 
     public int asignarBloques(int cantidad) {
         int primerBloque = -1;
@@ -61,5 +62,8 @@ public class Disco {
     public Bloque[] getBloques() {
         return bloques;
     }
+    
+    public int getHeadPosition() { return headPosition; }
+    public void setHeadPosition(int pos) { headPosition = pos; }
 }
 

@@ -11,19 +11,23 @@ public class SimuladorSistemaDeArchivos {
 
     public static void main(String[] args) {
 
-        SistemaArchivos sistema = new SistemaArchivos(40);
+        SistemaArchivos sistema = new SistemaArchivos(25);
         Directorio root = sistema.getRoot();
 
         // --- CREACIÓN DE ESTRUCTURA BÁSICA ---
-        sistema.crearProceso("p1","createDir", "Documentos", 0, root, "admin");
-        sistema.crearProceso("p2","createDir", "Musica", 0, root, "admin");
-        sistema.crearProceso("p3","createDir", "Fotos", 0, root, "user1");
+        sistema.crearProceso("p1","createDir", "Documentos", 0, root, "admin",1);
+        sistema.crearProceso("p2","createDir", "Musica", 0, root, "admin",6);
+        sistema.crearProceso("p3","createDir", "Fotos", 0, root, "user1",5);
 
         // Ejecutar procesos de creación de directorios de nivel 1
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
             //planificador.ejecutarFIFO();
-            planificador.ejecutarLIFO();
+            //planificador.ejecutarLIFO();
+            //planificador.ejecutarPA();
+            //planificador.ejecutarSSTF();
+            planificador.ejecutarPrioridad();
+            
         }
         
         // --- OBTENER REFERENCIAS DE NIVEL 1 ---
@@ -37,16 +41,19 @@ public class SimuladorSistemaDeArchivos {
         }
         
         // --- CREACIÓN DE DIRECTORIOS DE SEGUNDO NIVEL Y ARCHIVOS EN DOCUMENTOS ---
-        sistema.crearProceso("p4","createDir", "Tareas", 0, dirDocumentos, "admin");
-        sistema.crearProceso("p5","createDir", "Trabajos", 0, dirDocumentos, "admin");
-        sistema.crearProceso("p6","createFile", "Tesis.docx", 5, dirDocumentos, "admin");
-        sistema.crearProceso("p7","createFile", "Apuntes.txt", 1, dirDocumentos, "admin");
+        sistema.crearProceso("p4","createDir", "Tareas", 0, dirDocumentos, "admin",8);
+        sistema.crearProceso("p5","createDir", "Trabajos", 0, dirDocumentos, "admin",2);
+        sistema.crearProceso("p6","createFile", "Tesis.docx", 5, dirDocumentos, "admin",1);
+        sistema.crearProceso("p7","createFile", "Apuntes.txt", 1, dirDocumentos, "admin",10);
 
         // Ejecutar procesos de Documentos
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
             //planificador.ejecutarFIFO();
-            planificador.ejecutarLIFO();
+            //planificador.ejecutarLIFO();
+            //planificador.ejecutarPA();
+            //planificador.ejecutarSSTF();
+            planificador.ejecutarPrioridad();
         }
 
         // --- OBTENER REFERENCIAS DE SEGUNDO NIVEL ---
@@ -59,22 +66,24 @@ public class SimuladorSistemaDeArchivos {
         }
         
         // --- CREACIÓN DE ARCHIVOS EN TAREAS Y TRABAJOS ---
-        sistema.crearProceso("p8","createFile", "historia.pdf", 2, dirTareas, "admin");
-        sistema.crearProceso("p9","createFile", "matematicas.xls", 3, dirTareas, "admin");
-        sistema.crearProceso("p10","createFile", "proyecto_final.zip", 7, dirTrabajos, "admin");
+        sistema.crearProceso("p8","createFile", "historia.pdf", 2, dirTareas, "admin",8);
+        sistema.crearProceso("p9","createFile", "matematicas.xls", 3, dirTareas, "admin",5);
+        sistema.crearProceso("p10","createFile", "proyecto_final.zip", 7, dirTrabajos, "admin",6);
         
         // --- CREACIÓN DE ARCHIVOS EN MUSICA ---
-        sistema.crearProceso("p11","createFile", "track01.mp3", 4, dirMusica, "user1");
-        sistema.crearProceso("p12","createFile", "playlist.m3u", 1, dirMusica, "user1");
+        sistema.crearProceso("p11","createFile", "track01.mp3", 4, dirMusica, "user1",1);
+        sistema.crearProceso("p12","createFile", "playlist.m3u", 1, dirMusica, "user1",5);
         
         // --- CREACIÓN DE SUBDIRECTORIO EN FOTOS ---
-        sistema.crearProceso("p13","createDir", "Viajes", 0, dirFotos, "user1");
+        sistema.crearProceso("p13","createDir", "Viajes", 0, dirFotos, "user1",5);
 
         // Ejecutar los procesos restantes (p8 a p13)
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
             //planificador.ejecutarFIFO();
-            planificador.ejecutarLIFO();
+            //planificador.ejecutarLIFO();
+            //planificador.ejecutarPA();
+            planificador.ejecutarPrioridad();
         }
 
         // --- VERIFICACIÓN DE SUB-SUBDIRECTORIO ---
@@ -85,13 +94,36 @@ public class SimuladorSistemaDeArchivos {
         }
 
         // --- CREACIÓN DE ARCHIVO EN VIAJES ---
-        sistema.crearProceso("p14","createFile", "verano_2024.jpg", 3, dirViajes, "user1");
+        sistema.crearProceso("p14","createFile", "verano_2024.jpg", 3, dirViajes, "user1",9);
 
         // Ejecutar el último proceso
         while (sistema.hayProcesosPendientes()) {
             PlanificadorES planificador = new PlanificadorES(sistema);
             //planificador.ejecutarFIFO();
-            planificador.ejecutarLIFO();
+            //planificador.ejecutarLIFO();
+            //planificador.ejecutarPA();
+            planificador.ejecutarPrioridad();
+        }
+        
+        sistema.crearProceso("r1", "read", "Tesis.docx", 0, dirDocumentos, "admin",9);
+sistema.crearProceso("r2", "read", "historia.pdf", 0, dirTareas, "admin",5);
+sistema.crearProceso("r3", "read", "track01.mp3", 0, dirMusica, "user1",10);
+sistema.crearProceso("r4", "delete", "playlist.m3u", 0, dirMusica, "user1",5);
+
+while (sistema.hayProcesosPendientes()) {
+    PlanificadorES planificador = new PlanificadorES(sistema);
+    planificador.ejecutarPrioridad();
+}
+
+sistema.crearProceso("p99","createFile", "69.xxx", 1, dirViajes, "user1",8);
+
+        // Ejecutar el último proceso
+        while (sistema.hayProcesosPendientes()) {
+            PlanificadorES planificador = new PlanificadorES(sistema);
+            //planificador.ejecutarFIFO();
+            //planificador.ejecutarLIFO();
+            //planificador.ejecutarPA();
+            planificador.ejecutarPrioridad();
         }
 
         // Mostrar la interfaz gráfica directamente
