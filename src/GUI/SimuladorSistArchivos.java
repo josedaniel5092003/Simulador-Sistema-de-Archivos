@@ -155,7 +155,7 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
     }
     
     // Construye el árbol a partir del sistema de archivos
-    private void actualizarArbol() {
+    public void actualizarArbol() {
         Directorio rootDir = sistema.getRoot();
 
         // Crea el nodo raíz
@@ -229,7 +229,7 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
     getContentPane().add(scrollPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 60, 320, 390));
 }
     
-    private void dibujarDisco() {
+    public void dibujarDisco() {
     jPanel1.removeAll();
     jPanel1.setLayout(null); // importante
 
@@ -312,7 +312,7 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
 
 
     
-    private void llenarTablaAsignacion(SistemaArchivos sistema) {
+    public void llenarTablaAsignacion(SistemaArchivos sistema) {
         DefaultTableModel modelo = (DefaultTableModel) tablaAsignacion.getModel();
         modelo.setRowCount(0); // Limpia la tabla antes
 
@@ -428,6 +428,11 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         add.setFont(new java.awt.Font("Segoe UI", 0, 13)); // NOI18N
         add.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/plus.png"))); // NOI18N
         add.setText("Nuevo");
+        add.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                addMouseClicked(evt);
+            }
+        });
         bar.add(add);
 
         separador.setOrientation(javax.swing.SwingConstants.VERTICAL);
@@ -487,11 +492,11 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         tablaAsignacion.setEnabled(false);
         jScrollPane3.setViewportView(tablaAsignacion);
 
-        getContentPane().add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 60, -1, 390));
+        getContentPane().add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 60, -1, 390));
 
         jScrollPane4.setViewportView(jPanel1);
 
-        getContentPane().add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 60, 350, 390));
+        getContentPane().add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 60, 370, 390));
 
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Sin título (1200 x 800 px).png"))); // NOI18N
         jLabel1.setText("jLabel1");
@@ -509,6 +514,11 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         // TODO add your handling code here:
         cambiarModo();
     }//GEN-LAST:event_userTypeMousePressed
+
+    private void addMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_addMouseClicked
+        New ui = new New(sistema, this);
+        ui.setVisible(true);
+    }//GEN-LAST:event_addMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

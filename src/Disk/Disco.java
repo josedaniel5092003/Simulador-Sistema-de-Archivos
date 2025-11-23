@@ -12,6 +12,8 @@ package Disk;
 
 public class Disco {
     private Bloque[] bloques;
+    
+    private final int tamBloqueKB = 4;
 
     public Disco(int tam) {
         bloques = new Bloque[tam];
@@ -61,6 +63,10 @@ public class Disco {
 
     public Bloque[] getBloques() {
         return bloques;
+    }
+    
+    public int getTamBloqueKB() {
+        return tamBloqueKB;
     }
     
     public int getHeadPosition() { return headPosition; }

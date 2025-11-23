@@ -60,6 +60,9 @@
             </Property>
             <Property name="text" type="java.lang.String" value="Nuevo"/>
           </Properties>
+          <Events>
+            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="addMouseClicked"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JSeparator" name="separador">
           <Properties>
@@ -167,7 +170,7 @@
       </AuxValues>
       <Constraints>
         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-          <AbsoluteConstraints x="360" y="60" width="-1" height="390"/>
+          <AbsoluteConstraints x="330" y="60" width="-1" height="390"/>
         </Constraint>
       </Constraints>
 
@@ -191,7 +194,7 @@
     <Container class="javax.swing.JScrollPane" name="jScrollPane4">
       <Constraints>
         <Constraint layoutClass="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout" value="org.netbeans.modules.form.compat2.layouts.DesignAbsoluteLayout$AbsoluteConstraintsDescription">
-          <AbsoluteConstraints x="830" y="60" width="350" height="390"/>
+          <AbsoluteConstraints x="800" y="60" width="370" height="390"/>
         </Constraint>
       </Constraints>
 
