@@ -28,6 +28,7 @@ public class New extends javax.swing.JFrame {
         this.mainUI = mainUI;  
         initComponents();
          cargarDirectoriosEnComboBox();
+         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         
     }
 

@@ -445,6 +445,11 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         bar.add(editar);
 
         delete.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/eliminar.png"))); // NOI18N
+        delete.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                deleteMouseClicked(evt);
+            }
+        });
         bar.add(delete);
 
         separador1.setOrientation(javax.swing.SwingConstants.VERTICAL);
@@ -519,6 +524,11 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         New ui = new New(sistema, this);
         ui.setVisible(true);
     }//GEN-LAST:event_addMouseClicked
+
+    private void deleteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteMouseClicked
+        Delete ui = new Delete(sistema, this);
+        ui.setVisible(true);
+    }//GEN-LAST:event_deleteMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
