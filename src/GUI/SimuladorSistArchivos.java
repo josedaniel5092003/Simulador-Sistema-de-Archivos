@@ -24,6 +24,13 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import Disk.Bloque;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import java.awt.Font;
+import java.awt.Dimension;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 
 /**
  *
@@ -43,6 +50,8 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         initComponents();
         this.sistema = sistema;
         this.isAdmin = false;
+        
+        dibujarDisco();
         
         setTitle("Simulador de Sistema de Archivos");
         setSize(1200, 800);
@@ -206,6 +215,103 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         }
     }
     
+    private void inicializarPanelDisco() {
+    // Creamos el panel para los bloques
+    jPanel1 = new JPanel();
+    jPanel1.setLayout(null); // layout absoluto para posicionar bloques
+
+    // Creamos el scroll pane que contendrá el panel
+    JScrollPane scrollPanel = new JScrollPane(jPanel1);
+    scrollPanel.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+    scrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+    // Agregamos el scroll pane al contenedor principal
+    getContentPane().add(scrollPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 60, 320, 390));
+}
+    
+    private void dibujarDisco() {
+    jPanel1.removeAll();
+    jPanel1.setLayout(null); // importante
+
+    Bloque[] bloques = sistema.getDisco().getBloques();
+    int totalBloques = bloques.length;
+
+    int ancho = 60;
+    int alto = 60;
+    int margen = 10;
+    int bloquesPorFila = 5;
+    int x = 10;
+    int y = 20;
+
+    for (int i = 0; i < totalBloques; i++) {
+        JLabel lbl = new JLabel();
+        lbl.setBounds(x, y, ancho, alto);
+        lbl.setOpaque(true);
+        lbl.setHorizontalAlignment(SwingConstants.CENTER);
+        lbl.setVerticalAlignment(SwingConstants.CENTER);
+        lbl.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        lbl.setFont(new Font("Arial", Font.BOLD, 9));
+
+        if (bloques[i].estaLibre()) {
+            lbl.setBackground(Color.LIGHT_GRAY);
+            lbl.setText("");
+        } else {
+            lbl.setBackground(new Color(155, 197, 255));
+            Archivo ocupante = buscarArchivoPorBloque(sistema.getRoot(), i);
+            if (ocupante != null) {
+                lbl.setText(ocupante.getNombre());
+            }
+        }
+
+        jPanel1.add(lbl);
+
+        x += ancho + margen;
+        if ((i + 1) % bloquesPorFila == 0) {
+            x = 10;
+            y += alto + margen;
+        }
+    }
+
+    int filas = (int) Math.ceil((double) totalBloques / bloquesPorFila);
+    jPanel1.setPreferredSize(new Dimension(bloquesPorFila*(ancho+margen), filas*(alto+margen)));
+    jPanel1.revalidate();
+    jPanel1.repaint();
+    
+
+}
+
+
+
+// Función recursiva para buscar qué archivo ocupa un bloque
+private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
+    LinkedList archivos = dir.getArchivos();
+    for (int i = 0; i < archivos.getLength(); i++) {
+        Archivo archivo = (Archivo) archivos.getElementIn(i);
+        int actual = archivo.getPrimerBloque();
+        int cont = 0;
+        while (actual != -1 && cont < archivo.getTamanioBloques()) {
+            if (actual == bloqueId) return archivo;
+            actual = sistema.getDisco().getBloques()[actual].getSiguiente();
+            cont++;
+        }
+    }
+
+    // Subdirectorios
+    LinkedList subs = dir.getSubdirectorios();
+    for (int i = 0; i < subs.getLength(); i++) {
+        Archivo encontrado = buscarArchivoPorBloque((Directorio) subs.getElementIn(i), bloqueId);
+        if (encontrado != null) return encontrado;
+    }
+
+    return null; // no encontrado
+}
+
+
+
+    
+
+
+    
     private void llenarTablaAsignacion(SistemaArchivos sistema) {
         DefaultTableModel modelo = (DefaultTableModel) tablaAsignacion.getModel();
         modelo.setRowCount(0); // Limpia la tabla antes
@@ -308,6 +414,9 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         arbol = new javax.swing.JTree();
         jScrollPane3 = new javax.swing.JScrollPane();
         tablaAsignacion = new javax.swing.JTable();
+        jScrollPane4 = new javax.swing.JScrollPane();
+        jPanel1 = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
 
         jScrollPane1.setViewportView(jTree1);
 
@@ -380,6 +489,14 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
 
         getContentPane().add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(360, 60, -1, 390));
 
+        jScrollPane4.setViewportView(jPanel1);
+
+        getContentPane().add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(830, 60, 350, 390));
+
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Sin título (1200 x 800 px).png"))); // NOI18N
+        jLabel1.setText("jLabel1");
+        getContentPane().add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 1200, 800));
+
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
@@ -402,9 +519,12 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
     private javax.swing.JLabel directorio;
     private javax.swing.JLabel editar;
     private javax.swing.JPanel explorador;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
+    private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JTree jTree1;
     private javax.swing.JLabel menu;
     private javax.swing.JSeparator separador;

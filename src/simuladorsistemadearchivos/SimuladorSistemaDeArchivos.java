@@ -129,6 +129,7 @@ sistema.crearProceso("p99","createFile", "69.xxx", 1, dirViajes, "user1",8);
         // Mostrar la interfaz gráfica directamente
         SimuladorSistArchivos simulador = new SimuladorSistArchivos(sistema);
         simulador.setVisible(true);
+        
     }
 
     private static void mostrarDisco(SistemaArchivos sistema) {
