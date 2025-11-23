@@ -124,6 +124,7 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         tablaAsignacion.setModel(modelo);
         
         actualizarArbol();
+        arbol.addTreeSelectionListener(e -> mostrarInfoSeleccionada());
         llenarTablaAsignacion(sistema);
        
     }
@@ -388,6 +389,39 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
 
         arbol.setCellRenderer(renderer);
     }
+    
+    private void mostrarInfoSeleccionada() {
+    DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) arbol.getLastSelectedPathComponent();
+    if (nodo == null) return;
+
+    Object obj = nodo.getUserObject();
+    
+    jPanel2.removeAll(); // limpiar panel antes de mostrar nueva info
+    jPanel2.setLayout(new java.awt.GridLayout(0, 1, 5, 5)); // layout vertical simple
+
+    if (obj instanceof Archivo) {
+        Archivo archivo = (Archivo) obj;
+        
+        JLabel lblNombre = new JLabel("Nombre: " + archivo.getNombre());
+        JLabel lblTam = new JLabel("Tamaño en bloques: " + archivo.getTamanioBloques());
+        JLabel lblPrimerBloque = new JLabel("Primer bloque: " + archivo.getPrimerBloque());
+        JLabel lblOwner = new JLabel("Propietario: " + archivo.getOwner().getNombreProceso());
+        
+        jPanel2.add(lblNombre);
+        jPanel2.add(lblTam);
+        jPanel2.add(lblPrimerBloque);
+        jPanel2.add(lblOwner);
+        
+    } else if (obj instanceof Directorio) {
+        Directorio dir = (Directorio) obj;
+        JLabel lblDir = new JLabel("Directorio: " + dir.getNombre());
+        jPanel2.add(lblDir);
+    }
+
+    jPanel2.revalidate();
+    jPanel2.repaint();
+}
+
 
     /**
      * This method is called from within the constructor to initialize the form.
@@ -416,6 +450,7 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         tablaAsignacion = new javax.swing.JTable();
         jScrollPane4 = new javax.swing.JScrollPane();
         jPanel1 = new javax.swing.JPanel();
+        jPanel2 = new javax.swing.JPanel();
         jLabel1 = new javax.swing.JLabel();
 
         jScrollPane1.setViewportView(jTree1);
@@ -502,6 +537,7 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         jScrollPane4.setViewportView(jPanel1);
 
         getContentPane().add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 60, 370, 390));
+        getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 470, 300, 290));
 
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Sin título (1200 x 800 px).png"))); // NOI18N
         jLabel1.setText("jLabel1");
@@ -541,6 +577,7 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
     private javax.swing.JPanel explorador;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JScrollPane jScrollPane3;
