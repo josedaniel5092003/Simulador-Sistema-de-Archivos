@@ -9,7 +9,7 @@ public class SimuladorSistemaDeArchivos {
 
     public static void main(String[] args) {
 
-        SistemaArchivos sistema = new SistemaArchivos(20);
+        SistemaArchivos sistema = new SistemaArchivos(25);
         Directorio root = sistema.getRoot();
 
         // ----- CREAR 2 DIRECTORIOS -----

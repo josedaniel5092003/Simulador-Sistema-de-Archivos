@@ -511,6 +511,11 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         bar.add(separador);
 
         directorio.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/carpeta-vacia.png"))); // NOI18N
+        directorio.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                directorioMouseClicked(evt);
+            }
+        });
         bar.add(directorio);
 
         editar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/editar.png"))); // NOI18N
@@ -606,36 +611,40 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
     private void addMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_addMouseClicked
         //New ui = new New(sistema, this);
         //ui.setVisible(true);
+        if (isAdmin) {
             // Seleccionar el directorio donde se creará el archivo
-        var path = arbol.getSelectionPath();
-        if (path == null) {
-            JOptionPane.showMessageDialog(this, "Seleccione un directorio primero.");
-            return;
+            var path = arbol.getSelectionPath();
+            if (path == null) {
+                JOptionPane.showMessageDialog(this, "Seleccione un directorio primero.");
+                return;
+            }
+
+            var nodo = (DefaultMutableTreeNode) path.getLastPathComponent();
+            Object obj = nodo.getUserObject();
+
+            // Solo permitir crear archivos dentro de directorios
+            if (!(obj instanceof Directorio dirDestino)) {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar un directorio para crear un archivo.");
+                return;
+            }
+
+            // Abrir ventana de creación (nombre y tamaño)
+            new CrearArchivo(this, (nombreArchivo, tamEnBloques) -> {
+
+                sistema.crearProceso(
+                    "proc_create_" + nombreArchivo,   // nombre del proceso
+                    "createFile",                     // operación
+                    nombreArchivo,                    // nombre del archivo
+                    tamEnBloques,                     // tamaño en bloques
+                    dirDestino,                       // directorio destino
+                    "admin",                         
+                    null                               // extra (no usado)
+                );
+
+            }).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Debes ser administrador para crear archivos.");
         }
-
-        var nodo = (DefaultMutableTreeNode) path.getLastPathComponent();
-        Object obj = nodo.getUserObject();
-
-        // Solo permitir crear archivos dentro de directorios
-        if (!(obj instanceof Directorio dirDestino)) {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un directorio para crear un archivo.");
-            return;
-        }
-
-        // Abrir ventana de creación (nombre y tamaño)
-        new CrearArchivo(this, (nombreArchivo, tamEnBloques) -> {
-
-            sistema.crearProceso(
-                "proc_create_" + nombreArchivo,   // nombre del proceso
-                "createFile",                     // operación
-                nombreArchivo,                    // nombre del archivo
-                tamEnBloques,                     // tamaño en bloques
-                dirDestino,                       // directorio destino
-                "admin",                         
-                null                               // extra (no usado)
-            );
-
-        }).setVisible(true);
     }//GEN-LAST:event_addMouseClicked
 
     private void deleteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteMouseClicked
@@ -756,6 +765,33 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Debes ser administrador para editar archivos o directorios.");
         }
     }//GEN-LAST:event_editarMouseClicked
+
+    private void directorioMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_directorioMouseClicked
+        // TODO add your handling code here:
+        if (isAdmin) {
+            var path = arbol.getSelectionPath();
+            if (path == null) {
+                JOptionPane.showMessageDialog(this, "Seleccione un directorio primero.");
+                return;
+            }
+
+            var nodo = (DefaultMutableTreeNode) path.getLastPathComponent();
+            Object obj = nodo.getUserObject();
+
+            // Solo permitir crear archivos dentro de directorios
+            if (!(obj instanceof Directorio dirActual)) {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar un directorio para crear un archivo.");
+                return;
+            }
+
+            new CrearDirectorio(this, nombreDir -> {
+                sistema.crearProceso("CrearDirectorio", "createDir", nombreDir, 0, dirActual, "admin", null);
+            }).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Debes ser administrador para crear directorios.");
+        }
+
+    }//GEN-LAST:event_directorioMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

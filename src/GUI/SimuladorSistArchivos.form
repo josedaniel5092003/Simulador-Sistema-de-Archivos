@@ -75,6 +75,9 @@
               <Image iconType="3" name="/GUI/carpeta-vacia.png"/>
             </Property>
           </Properties>
+          <Events>
+            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="directorioMouseClicked"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="editar">
           <Properties>
