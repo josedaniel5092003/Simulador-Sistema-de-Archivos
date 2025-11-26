@@ -31,6 +31,8 @@ import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import java.awt.Font;
 import java.awt.Dimension;
+import java.io.File;
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -125,6 +127,37 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
 
         menuOpciones.add(itemGuardar);
         menuOpciones.add(itemCargar);
+        
+        
+        itemCargar.addActionListener(e -> {
+    // abre tu pantalla de carga
+    new Cargar().setVisible(true);  
+    // o el nombre correcto de tu clase
+});
+
+itemGuardar.addActionListener(e -> {
+
+    JFileChooser chooser = new JFileChooser();
+    chooser.setDialogTitle("Guardar sistema en JSON");
+
+    int seleccion = chooser.showSaveDialog(this);
+
+    if (seleccion == JFileChooser.APPROVE_OPTION) {
+        File archivo = chooser.getSelectedFile();
+
+        // Asegurar extensión .json
+        if (!archivo.getName().endsWith(".json")) {
+            archivo = new File(archivo.getAbsolutePath() + ".json");
+        }
+
+        try {
+            sistema.guardarEnJson(archivo);
+            JOptionPane.showMessageDialog(this, "Guardado exitoso");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error al guardar JSON: " + ex.getMessage());
+        }
+    }
+});
         
         DefaultTableModel modelo = new DefaultTableModel(
             new Object[]{"Archivo", "Bloques", "Primer Bloque", "Proceso"}, 
@@ -428,6 +461,7 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         arbol.setCellRenderer(renderer);
     }
     
+   
     private void mostrarInfoSeleccionada() {
         DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) arbol.getLastSelectedPathComponent();
         if (nodo == null) return;
