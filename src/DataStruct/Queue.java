@@ -56,7 +56,7 @@ public class Queue {
         size--;
 
         if (head == null) {
-            tail = null;   // ← CORRECCIÓN CRÍTICA
+            tail = null;   
         }
     }
 
@@ -71,14 +71,14 @@ public class Queue {
         size--;
 
         if (head == null) {
-            tail = null;   // ← CORRECCIÓN CRÍTICA
+            tail = null;   
         }
 
         return element;
     }
 
     public boolean isEmpty() {
-        return head == null;   // ← MÁS SEGURO Y SUFICIENTE
+        return head == null;  
     }
 
     public boolean contains(Object obj) {
@@ -136,4 +136,18 @@ public class Queue {
             pointer = pointer.getNext();
         }
     }
+    
+    public DataStruct.LinkedList toCustomLinkedList() {
+
+        DataStruct.LinkedList lista = new DataStruct.LinkedList();
+        Nodo actual = head;
+
+        while (actual != null) {
+            lista.insertFinal(actual.getElement());
+            actual = actual.getNext();
+        }
+
+        return lista;
+    }
+
 }

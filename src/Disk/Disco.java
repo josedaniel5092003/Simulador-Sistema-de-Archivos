@@ -4,6 +4,8 @@
  */
 package Disk;
 
+import DataStruct.LinkedList;
+
 /**
  *
  * @author Jose
@@ -21,14 +23,18 @@ public class Disco {
             bloques[i] = new Bloque(i);
         }
     }
-    private int headPosition = 0; 
+    private int headPosition = 10; 
 
-    public int asignarBloques(int cantidad) {
+    public LinkedList<Integer> asignarBloques(int cantidad) {
+
+        LinkedList<Integer> listaBloques = new LinkedList<>();
+
         int primerBloque = -1;
         int anterior = -1;
         int asignados = 0;
 
         for (int i = 0; i < bloques.length && asignados < cantidad; i++) {
+
             if (bloques[i].estaLibre()) {
                 bloques[i].ocupar();
 
@@ -40,16 +46,19 @@ public class Disco {
 
                 anterior = i;
                 asignados++;
+
+                // ➜ Agregarlo a tu LinkedList personalizada
+                listaBloques.insertFinal(i);
             }
         }
 
         if (asignados < cantidad) {
-            // no hay suficientes bloques → revertir
+            // revertir bloques marcados
             liberarBloques(primerBloque);
-            return -1;
+            return null; // ERROR → no hay memoria suficiente
         }
 
-        return primerBloque;
+        return listaBloques; // ➜ Devuelves TODOS los bloques usados
     }
 
     public void liberarBloques(int inicio) {
@@ -76,5 +85,24 @@ public class Disco {
     public void setHeadPosition(int pos) { 
         headPosition = pos; 
     }
+    
+    public int getTotalBloques() {
+        return bloques.length;
+    }
+
+    public int getBloquesUsados() {
+        int usados = 0;
+        for (Bloque b : bloques) {
+            if (!b.estaLibre()) {
+                usados++;
+            }
+        }
+        return usados;
+    }
+
+    public int getBloquesDisponibles() {
+        return getTotalBloques() - getBloquesUsados();
+    }
+
 }
 

@@ -1,13 +1,11 @@
 
 package FileSystem;
 
+import DataStruct.LinkedList;
 import DataStruct.Nodo;
 import DataStruct.Queue;
 import Process.Proceso;
 import Disk.Disco;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonArray;
 import java.io.File;
 
 public class SistemaArchivos {
@@ -36,6 +34,26 @@ public class SistemaArchivos {
 
     public void crearProceso(String nombreProc, String operacion, String nombre, int tamanio, Directorio dir, String usuario, String nuevoNombre) {
 
+        // Operaciones que se ejecutan inmediatamente
+        if (operacion.equals("createDir")) {
+            // Crear directorio inmediatamente
+            boolean creado = crearDirectorio(nombre, dir, usuario, pRoot);
+            return;
+        }
+
+        if (operacion.equals("deleteDir")) {
+            // Si el directorio existe y no tiene archivos ni subdirectorios, eliminar directamente
+            Directorio dirAEliminar = dir.buscarDirectorioPorNombre(nombre);
+            if (dirAEliminar != null 
+                && dirAEliminar.getArchivos().getLength() == 0 
+                && dirAEliminar.getSubdirectorios().getLength() == 0) {
+                eliminarDirectorio(nombre, dir);
+                return;
+            }
+            // Si no está vacío, crear proceso normalmente para planificador
+        }
+
+        // Crear proceso normalmente para las demás operaciones
         Proceso p = new Proceso(
             contadorProcesos++,
             nombreProc,
@@ -45,24 +63,26 @@ public class SistemaArchivos {
             dir,
             usuario
         );
-        
-        p.setNuevoNombre(nuevoNombre);
 
-        if (operacion.equals("read") || operacion.equals("delete")) {
-
-            Archivo a = dir.buscarArchivoPorNombre(nombre);
-
-            if (a != null) {
-                p.setBloqueObjetivo(a.getPrimerBloque());
-            } else {
-                // si el archivo no existe se deja -1, SSTF lo ignorará
-                p.setBloqueObjetivo(-1);
-            }
+        if (nuevoNombre != null) {
+            p.setNuevoNombre(nuevoNombre);
         }
+
+//        if (operacion.equals("read") || operacion.equals("deleteFile")) {
+//            Archivo a = dir.buscarArchivoPorNombre(nombre);
+//
+//            if (a != null) {
+//                p.setBloqueObjetivo(a.getPrimerBloque());
+//            } else {
+//                // si el archivo no existe se deja -1, SSTF lo ignorará
+//                p.setBloqueObjetivo(-1);
+//            }
+//        }
 
         colaProcesos.enqueue(p);
         System.out.println("Proceso agregado a la cola: " + p);
     }
+
 
 
     public Proceso getSiguienteProceso() {
@@ -98,17 +118,6 @@ public class SistemaArchivos {
                 p.getDestino(),
                 p
             );
-
-            // Actualizar posición del cabezal y bloque objetivo para SSTF
-            if (creado) {
-                Archivo a = p.getDestino().buscarArchivoPorNombre(p.getNombre());
-                if (a != null) {
-                    // establecer el bloque objetivo del proceso
-                    p.setBloqueObjetivo(a.getPrimerBloque());
-                    // mover la cabeza del disco al primer bloque asignado
-                    disco.setHeadPosition(a.getPrimerBloque());
-                }
-            }
 
             return creado;
 
@@ -182,9 +191,10 @@ public class SistemaArchivos {
             return false;
         }
 
-        int inicio = disco.asignarBloques(bloques);
+        LinkedList listaBloques = disco.asignarBloques(bloques);
+        int inicio = (int) listaBloques.getElementIn(0);
 
-        if (inicio == -1) {
+        if (inicio < 0) {
             System.out.println("No hay espacio disponible.");
             return false;
         }
@@ -192,13 +202,14 @@ public class SistemaArchivos {
         // ACTUALIZAR POSICIÓN DEL CABEZAL PARA SSTF
         disco.setHeadPosition(inicio);
 
-        Archivo nuevo = new Archivo(nombre, bloques, inicio, proceso, dirActual);
+        Archivo nuevo = new Archivo(nombre, bloques, inicio, proceso, dirActual, listaBloques);
         dirActual.agregarArchivo(nuevo);
 
         System.out.println(
             "Archivo creado: " + nombre +
-            " | Bloques: " + bloques +
-            " | Primer bloque: " + inicio
+            " | Cant. Bloques: " + bloques +
+            " | Primer bloque: " + inicio +
+            " | Lista de Bloques: " + listaBloques.toString()
         );
 
         return true;
@@ -321,167 +332,262 @@ public class SistemaArchivos {
     
     public void cargarDesdeJson(File archivoJson) throws Exception {
 
-    com.google.gson.Gson gson = new com.google.gson.Gson();
+        com.google.gson.Gson gson = new com.google.gson.Gson();
 
-    // leer archivo
-    String contenido = java.nio.file.Files.readString(archivoJson.toPath());
-    com.google.gson.JsonObject json = gson.fromJson(contenido, com.google.gson.JsonObject.class);
+        String contenido = java.nio.file.Files.readString(archivoJson.toPath());
+        com.google.gson.JsonObject json = gson.fromJson(contenido, com.google.gson.JsonObject.class);
 
-    // ================================
-    // RECREAR DISCO
-    // ================================
-    int tamDisco = json.get("tamanioDisco").getAsInt();
-    this.disco = new Disk.Disco(tamDisco);
+        int tamDisco = json.get("tamanioDisco").getAsInt();
+        this.disco = new Disk.Disco(tamDisco);
 
-    // ================================
-    // RECREAR ROOT
-    // ================================
-    this.root = new Directorio("root", null, pRoot);
+        this.root = new Directorio("root", null, pRoot);
 
-    // Mapa para encontrar directorios por ruta
-    java.util.Map<String, Directorio> mapaDirs = new java.util.HashMap<>();
-    mapaDirs.put("/", root);
+        // Mapa de rutas → directorios
+        java.util.Map<String, Directorio> mapaDirs = new java.util.HashMap<>();
+        mapaDirs.put("/", root);
 
-    // ================================
-    // CARGAR DIRECTORIOS
-    // ================================
-    com.google.gson.JsonArray dirs = json.getAsJsonArray("directorios");
+        com.google.gson.JsonArray dirs = json.getAsJsonArray("directorios");
 
-    for (int i = 0; i < dirs.size(); i++) {
+        for (int i = 0; i < dirs.size(); i++) {
 
-        var d = dirs.get(i).getAsJsonObject();
+            var d = dirs.get(i).getAsJsonObject();
 
-        String nombre = d.get("nombre").getAsString();
-        String padreRuta = d.get("padre").getAsString();  // por ejemplo "/Documentos"
+            String nombre = d.get("nombre").getAsString();
+            String padreRuta = d.get("padre").getAsString();
 
-        Directorio padre = mapaDirs.getOrDefault(padreRuta, root);
+            Directorio padre = mapaDirs.getOrDefault(padreRuta, root);
 
-        Directorio nuevo = new Directorio(nombre, padre, pRoot);
-        padre.agregarSubdirectorio(nuevo);
+            Directorio nuevo = new Directorio(nombre, padre, pRoot);
+            padre.agregarSubdirectorio(nuevo);
 
-        String ruta = padreRuta.equals("/") ? "/" + nombre : padreRuta + "/" + nombre;
-        mapaDirs.put(ruta, nuevo);
-    }
+            String ruta = padreRuta.equals("/") ? "/" + nombre : padreRuta + "/" + nombre;
+            mapaDirs.put(ruta, nuevo);
+        }
 
-    // ================================
-    // CARGAR ARCHIVOS
-    // ================================
-    com.google.gson.JsonArray archivos = json.getAsJsonArray("archivos");
-
-    for (int i = 0; i < archivos.size(); i++) {
-
-        var a = archivos.get(i).getAsJsonObject();
-
-        String nombre = a.get("nombre").getAsString();
-        int tam = a.get("tamanioBloques").getAsInt();
-        int inicio = a.get("primerBloque").getAsInt();
-        String rutaDir = a.get("directorio").getAsString();
-
-        Directorio d = mapaDirs.get(rutaDir);
-
-        Archivo nuevo = new Archivo(nombre, tam, inicio, pRoot, d);
-        d.agregarArchivo(nuevo);
-
+        com.google.gson.JsonArray archivos = json.getAsJsonArray("archivos");
         Disk.Bloque[] bloques = disco.getBloques();
 
-int actual = inicio;
-for (int b = 0; b < tam - 1; b++) {
-    int sig = actual + 1;              // si tus archivos en JSON están contiguos
-    bloques[actual].setSiguiente(sig);
-    bloques[actual].ocupar();          // marcar bloque como ocupado
-    actual = sig;
-}
-// último bloque
-bloques[actual].setSiguiente(-1);
-bloques[actual].ocupar();
-// si quieres puedes setear contenido del último bloque también
-// bloques[actual].setContenido(nombre);
-    }
+        for (int i = 0; i < archivos.size(); i++) {
 
-    System.out.println(">>> CARGA DESDE JSON COMPLETADA");
-}
+            var a = archivos.get(i).getAsJsonObject();
+
+            String nombre = a.get("nombre").getAsString();
+            int tam = a.get("tamanioBloques").getAsInt();
+            int primerBloque = a.get("primerBloque").getAsInt();
+            String rutaDir = a.get("directorio").getAsString();
+
+            Directorio d = mapaDirs.get(rutaDir);
+
+
+            com.google.gson.JsonArray arrBloques = a.getAsJsonArray("bloques");
+
+            DataStruct.LinkedList listaBloques = new DataStruct.LinkedList();
+
+            for (int b = 0; b < arrBloques.size(); b++) {
+                int nro = arrBloques.get(b).getAsInt();
+                listaBloques.insertFinal(nro);   
+                bloques[nro].ocupar();
+            }
+
+            Nodo<Integer> nodo = listaBloques.getFirst();
+            while (nodo != null && nodo.getNext() != null) {
+                int actual = nodo.getElement();
+                int siguiente = nodo.getNext().getElement();
+                bloques[actual].setSiguiente(siguiente);
+                nodo = nodo.getNext();
+            }
+
+            // último bloque →
+            if (nodo != null) {
+                bloques[nodo.getElement()].setSiguiente(-1);
+            }
+
+            Archivo nuevo = new Archivo(
+                    nombre,
+                    tam,
+                    primerBloque,
+                    pRoot,
+                    d,
+                    listaBloques           
+            );
+
+            d.agregarArchivo(nuevo);
+        }
+
+        System.out.println("CARGA DESDE JSON COMPLETADA");
+    }
     
     public void guardarEnJson(File archivoDestino) throws Exception {
 
-    com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+        com.google.gson.JsonObject json = new com.google.gson.JsonObject();
 
-    // Tamaño del disco
-    json.addProperty("tamanioDisco", disco.getBloques().length);
+        // Tamaño del disco
+        json.addProperty("tamanioDisco", disco.getBloques().length);
 
-    // ===========================
-    // GUARDAR DIRECTORIOS
-    // ===========================
-    com.google.gson.JsonArray listaDirs = new com.google.gson.JsonArray();
+        com.google.gson.JsonArray listaDirs = new com.google.gson.JsonArray();
 
-    guardarDirectoriosRecursivo(root, "/", listaDirs);
+        guardarDirectoriosRecursivo(root, "/", listaDirs);
 
-    json.add("directorios", listaDirs);
+        json.add("directorios", listaDirs);
 
-    // ===========================
-    // GUARDAR ARCHIVOS
-    // ===========================
-    com.google.gson.JsonArray listaArchivos = new com.google.gson.JsonArray();
+        com.google.gson.JsonArray listaArchivos = new com.google.gson.JsonArray();
 
-    guardarArchivosRecursivo(root, "/", listaArchivos);
+        guardarArchivosRecursivo(root, "/", listaArchivos);
 
-    json.add("archivos", listaArchivos);
+        json.add("archivos", listaArchivos);
 
-    // ===========================
-    // ESCRIBIR JSON AL ARCHIVO
-    // ===========================
-    String contenido = new com.google.gson.GsonBuilder()
-            .setPrettyPrinting()
-            .create()
-            .toJson(json);
+        String contenido = new com.google.gson.GsonBuilder()
+                .setPrettyPrinting()
+                .create()
+                .toJson(json);
 
-    java.nio.file.Files.writeString(archivoDestino.toPath(), contenido);
+        java.nio.file.Files.writeString(archivoDestino.toPath(), contenido);
 
-    System.out.println(">>> SISTEMA GUARDADO CORRECTAMENTE");
-}
-    
+        System.out.println("SISTEMA GUARDADO CORRECTAMENTE");
+    }
+
     private void guardarDirectoriosRecursivo(Directorio dir, String ruta, com.google.gson.JsonArray salida) {
 
-    if (!ruta.equals("/")) { 
-        com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
-        obj.addProperty("nombre", dir.getNombre());
-        obj.addProperty("padre", ruta.substring(0, ruta.lastIndexOf("/")));
-        if (obj.get("padre").getAsString().isEmpty()) obj.addProperty("padre", "/");
+        if (!ruta.equals("/")) { 
+            com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+            obj.addProperty("nombre", dir.getNombre());
+            obj.addProperty("padre", ruta.substring(0, ruta.lastIndexOf("/")));
+            if (obj.get("padre").getAsString().isEmpty()) obj.addProperty("padre", "/");
 
-        salida.add(obj);
+            salida.add(obj);
+        }
+
+        Nodo<Directorio> nodo = dir.getSubdirectorios().getFirst();
+        while (nodo != null) {
+            Directorio sub = nodo.getElement();
+            guardarDirectoriosRecursivo(sub, ruta + "/" + sub.getNombre(), salida);
+            nodo = nodo.getNext();
+        }
     }
 
-    Nodo<Directorio> nodo = dir.getSubdirectorios().getFirst();
-    while (nodo != null) {
-        Directorio sub = nodo.getElement();
-        guardarDirectoriosRecursivo(sub, ruta + "/" + sub.getNombre(), salida);
-        nodo = nodo.getNext();
+    private void guardarArchivosRecursivo(Directorio dir, String ruta, com.google.gson.JsonArray salida) {
+
+        Nodo<Archivo> nodoA = dir.getArchivos().getFirst();
+        while (nodoA != null) {
+            Archivo a = nodoA.getElement();
+
+            com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+            obj.addProperty("nombre", a.getNombre());
+            obj.addProperty("tamanioBloques", a.getTamanioBloques());
+            obj.addProperty("primerBloque", a.getPrimerBloque());
+            obj.addProperty("directorio", ruta);
+
+            // === NUEVO: Guardar lista de bloques ===
+            com.google.gson.JsonArray bloquesJson = new com.google.gson.JsonArray();
+
+            LinkedList<Integer> lista = a.getListaBloques();
+
+            if (lista != null) {
+                for (int i = 0; i < lista.getLength(); i++) {
+                    int bloque = (int) lista.getElementGeneric(i);
+                    bloquesJson.add(bloque);
+                }
+            }
+
+            obj.add("bloques", bloquesJson);
+
+            salida.add(obj);
+
+            nodoA = nodoA.getNext();
+        }
+
+        Nodo<Directorio> nodoD = dir.getSubdirectorios().getFirst();
+        while (nodoD != null) {
+            Directorio sub = nodoD.getElement();
+            guardarArchivosRecursivo(sub, ruta + "/" + sub.getNombre(), salida);
+            nodoD = nodoD.getNext();
+        }
     }
-}
+    
+    public void cargarLoteDesdeJson(File archivoJson) {
+        try {
+            String contenido = java.nio.file.Files.readString(archivoJson.toPath());
+            com.google.gson.Gson gson = new com.google.gson.Gson();
+            com.google.gson.JsonArray arr = gson.fromJson(contenido, com.google.gson.JsonArray.class);
 
-private void guardarArchivosRecursivo(Directorio dir, String ruta, com.google.gson.JsonArray salida) {
+            for (int i = 0; i < arr.size(); i++) {
+                com.google.gson.JsonObject pj = arr.get(i).getAsJsonObject();
+                if (pj == null) continue; // evita elementos nulos
 
-    Nodo<Archivo> nodoA = dir.getArchivos().getFirst();
-    while (nodoA != null) {
-        Archivo a = nodoA.getElement();
+                // Leer campos del JSON
+                String nombreProceso = pj.has("nombreProceso") ? pj.get("nombreProceso").getAsString() : "ProcesoDesconocido";
+                String operacion = pj.has("operacion") ? pj.get("operacion").getAsString() : "read";
+                String nombre = pj.has("nombre") ? pj.get("nombre").getAsString() : "ElementoDesconocido";
+                int tamBloques = pj.has("tamBloques") ? pj.get("tamBloques").getAsInt() : 0;
+                String destinoNombre = pj.has("destinoNombre") ? pj.get("destinoNombre").getAsString() : "/";
+                String usuario = pj.has("usuario") ? pj.get("usuario").getAsString() : "system";
+                String nuevoNombre = pj.has("nuevoNombre") && !pj.get("nuevoNombre").isJsonNull()
+                     ? pj.get("nuevoNombre").getAsString()
+                     : null; // 
 
-        com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
-        obj.addProperty("nombre", a.getNombre());
-        obj.addProperty("tamanioBloques", a.getTamanioBloques());
-        obj.addProperty("primerBloque", a.getPrimerBloque());
-        obj.addProperty("directorio", ruta);
 
-        salida.add(obj);
+                // Buscar directorio destino
+                Directorio destino = root.buscarDirectorioPorNombre(destinoNombre);
+                if (destino == null) {
+                    System.out.println("No se encontró el directorio destino: " + destinoNombre + ". Se omite este proceso.");
+                    continue;
+                }
 
-        nodoA = nodoA.getNext();
+                // Crear proceso según operación
+                if (operacion.equalsIgnoreCase("createDir")) {
+                    // crear inmediatamente
+                    crearDirectorio(nombre, destino, usuario, new Proceso(contadorProcesos++, nombreProceso, operacion, nombre, tamBloques, destino, usuario));
+                } else if (operacion.equalsIgnoreCase("deleteDir")) {
+                    Directorio dirAEliminar = destino.buscarDirectorioPorNombre(nombre);
+                    if (dirAEliminar != null && dirAEliminar.getArchivos().getLength() == 0) {
+                        // eliminar directamente
+                        eliminarDirectorio(nombre, destino);
+                    } else {
+                        // encolar si tiene archivos o subdirectorios
+                        crearProceso(nombreProceso, operacion, nombre, tamBloques, destino, usuario, nuevoNombre);
+                    }
+                } else {
+                    // operaciones normales: createFile, read, delete, update
+                    crearProceso(nombreProceso, operacion, nombre, tamBloques, destino, usuario, nuevoNombre);
+                }
+            }
+
+            System.out.println("Carga de lote desde JSON completada.");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Error al cargar el lote desde JSON.");
+        }
     }
 
-    Nodo<Directorio> nodoD = dir.getSubdirectorios().getFirst();
-    while (nodoD != null) {
-        Directorio sub = nodoD.getElement();
-        guardarArchivosRecursivo(sub, ruta + "/" + sub.getNombre(), salida);
-        nodoD = nodoD.getNext();
+
+
+    // Agrega todos los procesos al sistema: createDir y deleteDir se ejecutan, el resto se encola
+    public void agregarLoteProcesos(LinkedList<Proceso> lote) {
+        Nodo<Proceso> nodo = lote.getFirst();
+        while (nodo != null) {
+            Proceso p = nodo.getElement();
+
+            switch (p.getOperacion()) {
+                case "createDir":
+                    crearDirectorio(p.getNombre(), p.getDestino(), p.getUsuario(), p);
+                    break;
+                case "deleteDir":
+                    Directorio dir = p.getDestino().buscarSubdirectorio(p.getNombre());
+                    if (dir != null && dir.getArchivos().getLength() == 0) {
+                        eliminarDirectorio(p.getNombre(), p.getDestino());
+                    } else {
+                        colaProcesos.enqueue(p);
+                    }
+                    break;
+                default:
+                    colaProcesos.enqueue(p);
+                    break;
+            }
+
+            nodo = nodo.getNext();
+        }
     }
-}
 
 
     public Disco getDisco() {
@@ -493,6 +599,7 @@ private void guardarArchivosRecursivo(Directorio dir, String ruta, com.google.gs
     }
     
     public Queue getColaProcesos() {
-    return colaProcesos;
-}
+        return colaProcesos;
+    }
+    
 }

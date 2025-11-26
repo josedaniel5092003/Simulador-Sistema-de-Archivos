@@ -5,6 +5,7 @@
 package GUI;
 
 import DataStruct.LinkedList;
+import DataStruct.Nodo;
 import FileSystem.Archivo;
 import FileSystem.Directorio;
 import FileSystem.SistemaArchivos;
@@ -27,11 +28,13 @@ import javax.swing.tree.DefaultTreeModel;
 import Disk.Bloque;
 import Process.Proceso;
 import Scheduler.PlanificadorES;
+import java.awt.BorderLayout;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import java.awt.Font;
 import java.awt.Dimension;
 import java.io.File;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -63,8 +66,6 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         planificador = new PlanificadorES(sistema);
         iniciarHiloPlanificador();
         
-        dibujarDisco();
-        
         setTitle("Simulador de Sistema de Archivos");
         setSize(1200, 800);
         setLocationRelativeTo(null);
@@ -76,7 +77,7 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         arbol.setSize(260,420);
 
         // Fuente y colores modernos
-        arbol.setFont(new java.awt.Font("Corbel", java.awt.Font.PLAIN, 13));
+        //arbol.setFont(new java.awt.Font("Corbel", java.awt.Font.PLAIN, 13));
         arbol.setRowHeight(24);
         arbol.setForeground(new java.awt.Color(50, 50, 50));
         aplicarRendererConIconos();
@@ -119,77 +120,119 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         
         separador.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 25));
         separador1.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 25));
+
+        String[] politicas = { "FIFO", "LIFO", "SSTF", "PA" };
+        JComboBox<String> comboPoliticas = new JComboBox<>(politicas);
+        comboPoliticas.setBounds(20, 20, 100, 25);
+        panel.add(comboPoliticas);
+
+        // Escucha cambios
+        comboPoliticas.addActionListener(e -> {
+            String seleccion = (String) comboPoliticas.getSelectedItem();
+            switch (seleccion) {
+                case "FIFO" -> planificador.setPolitica(PlanificadorES.Politica.FIFO);
+                case "LIFO" -> planificador.setPolitica(PlanificadorES.Politica.LIFO);
+                case "SSTF" -> planificador.setPolitica(PlanificadorES.Politica.SSTF);
+                case "PA" -> planificador.setPolitica(PlanificadorES.Politica.PA);
+            }
+        });
+
         
         menuOpciones = new JPopupMenu();
 
         JMenuItem itemGuardar = new JMenuItem("Guardar configuración");
         JMenuItem itemCargar = new JMenuItem("Cargar configuración");
+        JMenuItem itemCargarLote = new JMenuItem("Cargar lote de procesos");
 
         menuOpciones.add(itemGuardar);
         menuOpciones.add(itemCargar);
+        menuOpciones.add(itemCargarLote);
         
         
-        itemCargar.addActionListener(e -> {
-    // abre tu pantalla de carga
-    new Cargar().setVisible(true);  
-    // o el nombre correcto de tu clase
-});
+        itemCargarLote.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Selecciona el archivo de procesos por lotes");
+            int resultado = chooser.showOpenDialog(this);
 
-itemGuardar.addActionListener(e -> {
+            if (resultado == JFileChooser.APPROVE_OPTION) {
+                File archivo = chooser.getSelectedFile();
 
-    JFileChooser chooser = new JFileChooser();
-    chooser.setDialogTitle("Guardar sistema en JSON");
+                try {
+                    
+                    sistema.cargarLoteDesdeJson(archivo);
 
-    int seleccion = chooser.showSaveDialog(this);
-
-    if (seleccion == JFileChooser.APPROVE_OPTION) {
-        File archivo = chooser.getSelectedFile();
-
-        // Asegurar extensión .json
-        if (!archivo.getName().endsWith(".json")) {
-            archivo = new File(archivo.getAbsolutePath() + ".json");
-        }
-
-        try {
-            sistema.guardarEnJson(archivo);
-            JOptionPane.showMessageDialog(this, "Guardado exitoso");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "Error al guardar JSON: " + ex.getMessage());
-        }
-    }
-});
+                    JOptionPane.showMessageDialog(this, "Lote cargado correctamente!");
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al cargar el lote: " + ex.getMessage());
+                }
+            }
+        });
         
+            itemCargar.addActionListener(e -> {
+                
+                new Cargar(this).setVisible(true);  
+                
+            });
+            
+            itemGuardar.addActionListener(e -> {
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Guardar sistema en JSON");
+
+            int seleccion = chooser.showSaveDialog(this);
+
+            if (seleccion == JFileChooser.APPROVE_OPTION) {
+                File archivo = chooser.getSelectedFile();
+
+                // Asegurar extensión .json
+                if (!archivo.getName().endsWith(".json")) {
+                    archivo = new File(archivo.getAbsolutePath() + ".json");
+                }
+
+                try {
+                    sistema.guardarEnJson(archivo);
+                    JOptionPane.showMessageDialog(this, "Guardado exitoso");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Error al guardar JSON: " + ex.getMessage());
+                }
+            }
+        });
+
         DefaultTableModel modelo = new DefaultTableModel(
             new Object[]{"Archivo", "Bloques", "Primer Bloque", "Proceso"}, 
             0
         );
         tablaAsignacion.setModel(modelo);
         
-        actualizarArbol();
+                
+        dibujarDisco(this.sistema);
+        actualizarArbol(this.sistema);
+        llenarTablaAsignacion(this.sistema);
+        actualizarInfo();
+        
         arbol.addTreeSelectionListener(e -> mostrarInfoSeleccionada());
-        llenarTablaAsignacion();
-       
+   
     }
     
     private void iniciarHiloPlanificador() {
         hiloPlanificador = new Thread(() -> {
-            while (true) {
 
+            while (true) {
                 try {
+
                     // Si hay procesos en la cola de E/S…
                     if (sistema.hayProcesosPendientes()) {
 
-                        // Ejecuta un ciclo según la política activa
-                        planificador.ejecutarFIFO();
+                        
+                        planificador.ejecutarUnProceso();
 
-                        // Actualiza interfaz (JTable, JTree, bloques, etc.)
-                        SwingUtilities.invokeLater(() -> {
-                            actualizarVista();
-                        });
+                       
+                        SwingUtilities.invokeLater(() -> actualizarVista());
                     }
 
-                    // Pequeño delay para simular operaciones de disco
-                    Thread.sleep(300);
+                    //  delay para simular operaciones de disco
+                    Thread.sleep(1000);
 
                 } catch (Exception ex) {
                     ex.printStackTrace();
@@ -197,16 +240,16 @@ itemGuardar.addActionListener(e -> {
             }
         });
 
-        hiloPlanificador.setDaemon(true); // el hilo se cierra con la app
+        hiloPlanificador.setDaemon(true); // termina con la app
         hiloPlanificador.start();
     }
     
     private void actualizarVista() {
-        llenarTablaAsignacion();
-        dibujarDisco();
-        //actualizarColaProcesos();
-        actualizarArbol();
+        llenarTablaAsignacion(sistema);
+        dibujarDisco(sistema);
+        actualizarArbol(sistema);
         arbol.addTreeSelectionListener(e -> mostrarInfoSeleccionada());
+        actualizarInfo();
     }
 
     private void cambiarModo(){
@@ -236,7 +279,7 @@ itemGuardar.addActionListener(e -> {
     }
     
     // Construye el árbol a partir del sistema de archivos
-    public void actualizarArbol() {
+    public void actualizarArbol(SistemaArchivos sistema) {
         Directorio rootDir = sistema.getRoot();
 
         // Crea el nodo raíz
@@ -286,7 +329,7 @@ itemGuardar.addActionListener(e -> {
                 archivo.getOwner().getNombreProceso()
                    
             });
-            System.out.println(archivo.getOwner().getNombreProceso());
+            //System.out.println(archivo.getOwner().getNombreProceso());
         }
 
         // Subdirectorios
@@ -310,9 +353,9 @@ itemGuardar.addActionListener(e -> {
         getContentPane().add(scrollPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 60, 320, 390));
     }
     
-    public void dibujarDisco() {
+    public void dibujarDisco(SistemaArchivos sistema) {
         jPanel1.removeAll();
-        jPanel1.setLayout(null); // importante
+        jPanel1.setLayout(null);
 
         Bloque[] bloques = sistema.getDisco().getBloques();
         int totalBloques = bloques.length;
@@ -323,6 +366,9 @@ itemGuardar.addActionListener(e -> {
         int bloquesPorFila = 5;
         int x = 10;
         int y = 20;
+
+        java.util.Map<Integer, String> mapaBloques = new java.util.HashMap<>();
+        llenarMapaBloques(sistema.getRoot(), mapaBloques);
 
         for (int i = 0; i < totalBloques; i++) {
             JLabel lbl = new JLabel();
@@ -338,10 +384,8 @@ itemGuardar.addActionListener(e -> {
                 lbl.setText("");
             } else {
                 lbl.setBackground(new Color(155, 197, 255));
-                Archivo ocupante = buscarArchivoPorBloque(sistema.getRoot(), i);
-                if (ocupante != null) {
-                    lbl.setText(ocupante.getNombre());
-                }
+                String nombreArchivo = mapaBloques.get(i);
+                lbl.setText(nombreArchivo != null ? nombreArchivo : "?");
             }
 
             jPanel1.add(lbl);
@@ -354,38 +398,41 @@ itemGuardar.addActionListener(e -> {
         }
 
         int filas = (int) Math.ceil((double) totalBloques / bloquesPorFila);
-        jPanel1.setPreferredSize(new Dimension(bloquesPorFila*(ancho+margen), filas*(alto+margen)));
+        jPanel1.setPreferredSize(new Dimension(bloquesPorFila * (ancho + margen), filas * (alto + margen)));
+
         jPanel1.revalidate();
         jPanel1.repaint();
     }
 
+    private void llenarMapaBloques(Directorio dir, java.util.Map<Integer, String> mapa) {
 
-    // Función recursiva para buscar qué archivo ocupa un bloque
-    private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
-        LinkedList archivos = dir.getArchivos();
-        for (int i = 0; i < archivos.getLength(); i++) {
-            Archivo archivo = (Archivo) archivos.getElementIn(i);
-            int actual = archivo.getPrimerBloque();
-            int cont = 0;
-            while (actual != -1 && cont < archivo.getTamanioBloques()) {
-                if (actual == bloqueId) return archivo;
-                actual = sistema.getDisco().getBloques()[actual].getSiguiente();
-                cont++;
+        // Archivos del directorio actual
+        Nodo<Archivo> nodoA = dir.getArchivos().getFirst();
+        while (nodoA != null) {
+            Archivo archivo = nodoA.getElement();
+
+            // Recorrer la LinkedList de bloques del archivo
+            Nodo<Integer> bloqueNodo = archivo.getListaBloques().getFirst();
+            while (bloqueNodo != null) {
+                int bloque = bloqueNodo.getElement();
+                mapa.put(bloque, archivo.getNombre());
+                bloqueNodo = bloqueNodo.getNext();
             }
+
+            nodoA = nodoA.getNext();
         }
 
         // Subdirectorios
-        LinkedList subs = dir.getSubdirectorios();
-        for (int i = 0; i < subs.getLength(); i++) {
-            Archivo encontrado = buscarArchivoPorBloque((Directorio) subs.getElementIn(i), bloqueId);
-            if (encontrado != null) return encontrado;
+        Nodo<Directorio> nodoD = dir.getSubdirectorios().getFirst();
+        while (nodoD != null) {
+            llenarMapaBloques(nodoD.getElement(), mapa);
+            nodoD = nodoD.getNext();
         }
-
-        return null; // no encontrado
     }
 
+
     
-    public void llenarTablaAsignacion() {
+    public void llenarTablaAsignacion(SistemaArchivos sistema) {
         DefaultTableModel modelo = (DefaultTableModel) tablaAsignacion.getModel();
         modelo.setRowCount(0); // Limpia la tabla antes
 
@@ -461,6 +508,12 @@ itemGuardar.addActionListener(e -> {
         arbol.setCellRenderer(renderer);
     }
     
+    private void actualizarInfo(){
+        totales.setText("" + sistema.getDisco().getTotalBloques());
+        usados.setText("" + sistema.getDisco().getBloquesUsados());
+        disponibles.setText("" + sistema.getDisco().getBloquesDisponibles());
+    }
+    
    
     private void mostrarInfoSeleccionada() {
         DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) arbol.getLastSelectedPathComponent();
@@ -522,6 +575,14 @@ itemGuardar.addActionListener(e -> {
         jScrollPane4 = new javax.swing.JScrollPane();
         jPanel1 = new javax.swing.JPanel();
         jPanel2 = new javax.swing.JPanel();
+        panel = new javax.swing.JPanel();
+        info = new javax.swing.JPanel();
+        totales = new javax.swing.JLabel();
+        jLabel3 = new javax.swing.JLabel();
+        jLabel4 = new javax.swing.JLabel();
+        jLabel5 = new javax.swing.JLabel();
+        usados = new javax.swing.JLabel();
+        disponibles = new javax.swing.JLabel();
         jLabel1 = new javax.swing.JLabel();
 
         jScrollPane1.setViewportView(jTree1);
@@ -620,10 +681,51 @@ itemGuardar.addActionListener(e -> {
 
         getContentPane().add(jScrollPane3, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 60, -1, 390));
 
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder(new javax.swing.border.LineBorder(new java.awt.Color(153, 153, 153), 1, true), "Alamacenamiento", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 14))); // NOI18N
         jScrollPane4.setViewportView(jPanel1);
 
         getContentPane().add(jScrollPane4, new org.netbeans.lib.awtextra.AbsoluteConstraints(800, 60, 370, 390));
+
+        jPanel2.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)), "Detalles", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 14))); // NOI18N
         getContentPane().add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 470, 300, 290));
+
+        panel.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 102), 2), "Cambiar Política", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 12), new java.awt.Color(0, 0, 102))); // NOI18N
+        getContentPane().add(panel, new org.netbeans.lib.awtextra.AbsoluteConstraints(330, 470, 120, 290));
+
+        info.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(153, 153, 153)), "Información", javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.DEFAULT_POSITION, new java.awt.Font("Segoe UI", 1, 14))); // NOI18N
+        info.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+
+        totales.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        totales.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        totales.setText("0");
+        info.add(totales, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 40, 20, -1));
+
+        jLabel3.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel3.setText("Bloques disponibles:  ");
+        info.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 100, -1, -1));
+
+        jLabel4.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel4.setText("Bloques usados:  ");
+        info.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 70, -1, -1));
+
+        jLabel5.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabel5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel5.setText("Bloques totales:  ");
+        info.add(jLabel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 40, -1, -1));
+
+        usados.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        usados.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        usados.setText("0");
+        info.add(usados, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 70, 20, -1));
+
+        disponibles.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        disponibles.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        disponibles.setText("0");
+        info.add(disponibles, new org.netbeans.lib.awtextra.AbsoluteConstraints(150, 100, 20, -1));
+
+        getContentPane().add(info, new org.netbeans.lib.awtextra.AbsoluteConstraints(460, 470, 710, 290));
 
         jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/Sin título (1200 x 800 px).png"))); // NOI18N
         jLabel1.setText("jLabel1");
@@ -834,9 +936,14 @@ itemGuardar.addActionListener(e -> {
     private javax.swing.JToolBar bar;
     private javax.swing.JLabel delete;
     private javax.swing.JLabel directorio;
+    private javax.swing.JLabel disponibles;
     private javax.swing.JLabel editar;
     private javax.swing.JPanel explorador;
+    private javax.swing.JPanel info;
     private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JScrollPane jScrollPane1;
@@ -845,9 +952,12 @@ itemGuardar.addActionListener(e -> {
     private javax.swing.JScrollPane jScrollPane4;
     private javax.swing.JTree jTree1;
     private javax.swing.JLabel menu;
+    private javax.swing.JPanel panel;
     private javax.swing.JSeparator separador;
     private javax.swing.JSeparator separador1;
     private javax.swing.JTable tablaAsignacion;
+    private javax.swing.JLabel totales;
+    private javax.swing.JLabel usados;
     private javax.swing.JLabel userType;
     // End of variables declaration//GEN-END:variables
 }

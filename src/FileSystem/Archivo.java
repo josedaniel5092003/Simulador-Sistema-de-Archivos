@@ -4,6 +4,7 @@
  */
 package FileSystem;
 
+import DataStruct.LinkedList;
 import Process.Proceso;
 
 /**
@@ -16,13 +17,15 @@ public class Archivo {
     private int primerBloque;
     private Proceso owner;  // proceso que lo creó
     private Directorio dirPadre; 
+    private LinkedList listaBloques;
 
-    public Archivo(String nombre, int tamanioBloques, int primerBloque, Proceso owner, Directorio dirPadre) {
+    public Archivo(String nombre, int tamanioBloques, int primerBloque, Proceso owner, Directorio dirPadre, LinkedList listaBloques) {
         this.nombre = nombre;
         this.tamanioBloques = tamanioBloques;
         this.primerBloque = primerBloque;
         this.owner = owner;
         this.dirPadre = dirPadre;
+        this.listaBloques = listaBloques;
     }
 
     public String getNombre() {
@@ -53,5 +56,8 @@ public class Archivo {
     public Directorio getPadre() {
         return this.dirPadre;
     }
-
+    
+    public LinkedList getListaBloques() {
+        return this.listaBloques;
+    }
 }

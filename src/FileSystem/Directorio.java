@@ -173,7 +173,6 @@ public class Directorio {
         this.nombre = nuevoNombre;
     }
     
-    
     @Override
     public String toString() {
         return nombre;

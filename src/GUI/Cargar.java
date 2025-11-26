@@ -3,13 +3,10 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package GUI;
-import FileSystem.Archivo;
 import FileSystem.SistemaArchivos;
-import simuladorsistemadearchivos.SimuladorSistemaDeArchivos;
 import java.io.File;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import javax.swing.filechooser.FileNameExtensionFilter;
 /**
  *
  * @author jehiv
@@ -17,19 +14,17 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 public class Cargar extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Cargar.class.getName());
-
-    /**
-     * Creates new form Cargar
-     */
-    
     private File archivoSeleccionado = null;
     private boolean archivoCargado = false;
     private SistemaArchivos sistema;
+    private SimuladorSistArchivos mainUI;
     
-    public Cargar() {
-        sistema = new SistemaArchivos(1); // valor temporal
-
+    public Cargar(SimuladorSistArchivos gui) {
         initComponents();
+        sistema = new SistemaArchivos(1); // valor temporal
+        mainUI = gui;
+        this.setLocationRelativeTo(null);
+        this.setResizable(false);
     }
 
     /**
@@ -121,36 +116,29 @@ public class Cargar extends javax.swing.JFrame {
 
     private void jButton1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton1ActionPerformed
          if (!archivoCargado || archivoSeleccionado == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Debe cargar primero un archivo JSON válido.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            sistema.cargarDesdeJson(archivoSeleccionado); // Carga la config
+
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(this,
+                    "Error al cargar JSON: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         JOptionPane.showMessageDialog(this,
-                "Debe cargar primero un archivo JSON válido.",
-                "Error", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
+                "Configuración cargada correctamente.",
+                "Éxito", JOptionPane.INFORMATION_MESSAGE); 
 
-    try {
-        sistema.cargarDesdeJson(archivoSeleccionado); // Cargas la config
-    } catch (Exception e) {
-        JOptionPane.showMessageDialog(this,
-                "Error al cargar JSON: " + e.getMessage(),
-                "Error", JOptionPane.ERROR_MESSAGE);
-        return;
-    }
-
-    JOptionPane.showMessageDialog(this,
-            "Configuración cargada correctamente.",
-            "Éxito", JOptionPane.INFORMATION_MESSAGE);
-
-    // Abrir interfaz principal
-    SimuladorSistArchivos ui = new SimuladorSistArchivos(sistema);
-    ui.setVisible(true);
-
-    // Cerrar ventana de carga
-    
-    ui.llenarTablaAsignacion();
-    ui.dibujarDisco();
-    ui.actualizarArbol();
-    this.dispose();
-
+        mainUI.llenarTablaAsignacion(sistema);
+        mainUI.dibujarDisco(sistema);
+        mainUI.actualizarArbol(sistema);
+        this.dispose();
     }//GEN-LAST:event_jButton1ActionPerformed
 
     private void jButton2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton2ActionPerformed
@@ -172,30 +160,6 @@ public class Cargar extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_jButton2ActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        /* Set the Nimbus look and feel */
-        //<editor-fold defaultstate="collapsed" desc=" Look and feel setting code (optional) ">
-        /* If Nimbus (introduced in Java SE 6) is not available, stay with the default look and feel.
-         * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
-         */
-        try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
-                    javax.swing.UIManager.setLookAndFeel(info.getClassName());
-                    break;
-                }
-            }
-        } catch (ReflectiveOperationException | javax.swing.UnsupportedLookAndFeelException ex) {
-            logger.log(java.util.logging.Level.SEVERE, null, ex);
-        }
-        //</editor-fold>
-
-        /* Create and display the form */
-        java.awt.EventQueue.invokeLater(() -> new Cargar().setVisible(true));
-    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton1;
