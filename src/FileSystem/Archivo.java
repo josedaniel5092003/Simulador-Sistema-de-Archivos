@@ -15,14 +15,14 @@ public class Archivo {
     private int tamanioBloques;
     private int primerBloque;
     private Proceso owner;  // proceso que lo creó
-    private String color;  // opcional para GUI
+    private Directorio dirPadre; 
 
-    public Archivo(String nombre, int tamanioBloques, int primerBloque, Proceso owner) {
+    public Archivo(String nombre, int tamanioBloques, int primerBloque, Proceso owner, Directorio dirPadre) {
         this.nombre = nombre;
         this.tamanioBloques = tamanioBloques;
         this.primerBloque = primerBloque;
         this.owner = owner;
-        this.color = null;
+        this.dirPadre = dirPadre;
     }
 
     public String getNombre() {
@@ -38,11 +38,7 @@ public class Archivo {
     }
     
     public Proceso getOwner() {
-    return owner;
-}
-
-    public String getColor() {
-        return color;
+        return owner;
     }
 
     public void setNombre(String nuevoNombre) {
@@ -52,6 +48,10 @@ public class Archivo {
     @Override
     public String toString() {
         return nombre;
+    }
+    
+    public Directorio getPadre() {
+        return this.dirPadre;
     }
 
 }

@@ -13,19 +13,19 @@ public class SimuladorSistemaDeArchivos {
         Directorio root = sistema.getRoot();
 
         // ----- CREAR 2 DIRECTORIOS -----
-        sistema.crearProceso("p1", "createDir", "Documentos", 0, root, "admin", 5);
-        sistema.crearProceso("p2", "createDir", "Fotos", 0, root, "admin", 3);
-
+        sistema.crearProceso("p1", "createDir", "Documentos", 0, root, "admin", null);
+        sistema.crearProceso("p2", "createDir", "Fotos", 0, root, "admin", null);
+        
         ejecutarTodo(sistema);
-
+        
         // Obtener referencias
         Directorio dirDocs = root.buscarDirectorioPorNombre("Documentos");
         Directorio dirFotos = root.buscarDirectorioPorNombre("Fotos");
-
+        
         // ----- CREAR 2 ARCHIVOS -----
-        sistema.crearProceso("p3", "createFile", "resume.pdf", 3, dirDocs, "admin", 7);
-        sistema.crearProceso("p4", "createFile", "selfie.jpg", 2, dirFotos, "admin", 4);
-
+        sistema.crearProceso("p3", "createFile", "resume.pdf", 3, dirDocs, "admin", null);
+        sistema.crearProceso("p4", "createFile", "selfie.jpg", 2, dirFotos, "admin", null);
+        
         ejecutarTodo(sistema);
 
         // Mostrar interfaz
@@ -37,7 +37,7 @@ public class SimuladorSistemaDeArchivos {
     private static void ejecutarTodo(SistemaArchivos sistema) {
         PlanificadorES planificador = new PlanificadorES(sistema);
         while (sistema.hayProcesosPendientes()) {
-            planificador.ejecutarPrioridad();
+            planificador.ejecutarFIFO();
         }
     }
 }

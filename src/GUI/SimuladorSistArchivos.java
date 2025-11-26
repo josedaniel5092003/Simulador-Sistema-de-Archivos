@@ -25,18 +25,23 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import Disk.Bloque;
+import Process.Proceso;
+import Scheduler.PlanificadorES;
 import javax.swing.JLabel;
 import javax.swing.SwingConstants;
 import java.awt.Font;
 import java.awt.Dimension;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.SwingUtilities;
 
 /**
  *
  * @author vivia
  */
 public class SimuladorSistArchivos extends javax.swing.JFrame {
+
 
     /**
      * Creates new form SimuladorSistArchivos
@@ -45,19 +50,24 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
     private SistemaArchivos sistema;
     public boolean isAdmin;
     JPopupMenu menuOpciones;
+    private PlanificadorES planificador;
+    private Thread hiloPlanificador;
+
     
     public SimuladorSistArchivos(SistemaArchivos sistema) {
         initComponents();
         this.sistema = sistema;
         this.isAdmin = false;
+        planificador = new PlanificadorES(sistema);
+        iniciarHiloPlanificador();
         
         dibujarDisco();
         
         setTitle("Simulador de Sistema de Archivos");
         setSize(1200, 800);
         setLocationRelativeTo(null);
+        this.setResizable(false);
         explorador.setSize(280,440);
-        
         arbol.setRootVisible(true);
         arbol.setShowsRootHandles(true);
         arbol.putClientProperty("JTree.lineStyle", "Angled"); 
@@ -70,8 +80,8 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         aplicarRendererConIconos();
          
         // Estilo general del toolbar
-        bar.setFloatable(false);                    // Evita que se mueva
-        bar.setRollover(true);                      // Efecto hover
+        bar.setFloatable(false);                   
+        bar.setRollover(true);                      
         bar.setOpaque(true);
         bar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10)); // Márgenes
         
@@ -94,7 +104,6 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         editar.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         editar.setToolTipText("Editar");
         editar.disable();
-        
         
         menu.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 25));
         menu.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -125,10 +134,48 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
         
         actualizarArbol();
         arbol.addTreeSelectionListener(e -> mostrarInfoSeleccionada());
-        llenarTablaAsignacion(sistema);
+        llenarTablaAsignacion();
        
     }
     
+    private void iniciarHiloPlanificador() {
+        hiloPlanificador = new Thread(() -> {
+            while (true) {
+
+                try {
+                    // Si hay procesos en la cola de E/S…
+                    if (sistema.hayProcesosPendientes()) {
+
+                        // Ejecuta un ciclo según la política activa
+                        planificador.ejecutarFIFO();
+
+                        // Actualiza interfaz (JTable, JTree, bloques, etc.)
+                        SwingUtilities.invokeLater(() -> {
+                            actualizarVista();
+                        });
+                    }
+
+                    // Pequeño delay para simular operaciones de disco
+                    Thread.sleep(300);
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        hiloPlanificador.setDaemon(true); // el hilo se cierra con la app
+        hiloPlanificador.start();
+    }
+    
+    private void actualizarVista() {
+        llenarTablaAsignacion();
+        dibujarDisco();
+        //actualizarColaProcesos();
+        actualizarArbol();
+        arbol.addTreeSelectionListener(e -> mostrarInfoSeleccionada());
+    }
+
     private void cambiarModo(){
         isAdmin = !isAdmin;
         if (isAdmin) {
@@ -217,103 +264,95 @@ public class SimuladorSistArchivos extends javax.swing.JFrame {
     }
     
     private void inicializarPanelDisco() {
-    // Creamos el panel para los bloques
-    jPanel1 = new JPanel();
-    jPanel1.setLayout(null); // layout absoluto para posicionar bloques
+        // Creamos el panel para los bloques
+        jPanel1 = new JPanel();
+        jPanel1.setLayout(null); // layout absoluto para posicionar bloques
 
-    // Creamos el scroll pane que contendrá el panel
-    JScrollPane scrollPanel = new JScrollPane(jPanel1);
-    scrollPanel.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-    scrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        // Creamos el scroll pane que contendrá el panel
+        JScrollPane scrollPanel = new JScrollPane(jPanel1);
+        scrollPanel.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollPanel.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
 
-    // Agregamos el scroll pane al contenedor principal
-    getContentPane().add(scrollPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 60, 320, 390));
-}
+        // Agregamos el scroll pane al contenedor principal
+        getContentPane().add(scrollPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(850, 60, 320, 390));
+    }
     
     public void dibujarDisco() {
-    jPanel1.removeAll();
-    jPanel1.setLayout(null); // importante
+        jPanel1.removeAll();
+        jPanel1.setLayout(null); // importante
 
-    Bloque[] bloques = sistema.getDisco().getBloques();
-    int totalBloques = bloques.length;
+        Bloque[] bloques = sistema.getDisco().getBloques();
+        int totalBloques = bloques.length;
 
-    int ancho = 60;
-    int alto = 60;
-    int margen = 10;
-    int bloquesPorFila = 5;
-    int x = 10;
-    int y = 20;
+        int ancho = 60;
+        int alto = 60;
+        int margen = 10;
+        int bloquesPorFila = 5;
+        int x = 10;
+        int y = 20;
 
-    for (int i = 0; i < totalBloques; i++) {
-        JLabel lbl = new JLabel();
-        lbl.setBounds(x, y, ancho, alto);
-        lbl.setOpaque(true);
-        lbl.setHorizontalAlignment(SwingConstants.CENTER);
-        lbl.setVerticalAlignment(SwingConstants.CENTER);
-        lbl.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        lbl.setFont(new Font("Arial", Font.BOLD, 9));
+        for (int i = 0; i < totalBloques; i++) {
+            JLabel lbl = new JLabel();
+            lbl.setBounds(x, y, ancho, alto);
+            lbl.setOpaque(true);
+            lbl.setHorizontalAlignment(SwingConstants.CENTER);
+            lbl.setVerticalAlignment(SwingConstants.CENTER);
+            lbl.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+            lbl.setFont(new Font("Arial", Font.BOLD, 9));
 
-        if (bloques[i].estaLibre()) {
-            lbl.setBackground(Color.LIGHT_GRAY);
-            lbl.setText("");
-        } else {
-            lbl.setBackground(new Color(155, 197, 255));
-            Archivo ocupante = buscarArchivoPorBloque(sistema.getRoot(), i);
-            if (ocupante != null) {
-                lbl.setText(ocupante.getNombre());
+            if (bloques[i].estaLibre()) {
+                lbl.setBackground(Color.LIGHT_GRAY);
+                lbl.setText("");
+            } else {
+                lbl.setBackground(new Color(155, 197, 255));
+                Archivo ocupante = buscarArchivoPorBloque(sistema.getRoot(), i);
+                if (ocupante != null) {
+                    lbl.setText(ocupante.getNombre());
+                }
+            }
+
+            jPanel1.add(lbl);
+
+            x += ancho + margen;
+            if ((i + 1) % bloquesPorFila == 0) {
+                x = 10;
+                y += alto + margen;
             }
         }
 
-        jPanel1.add(lbl);
+        int filas = (int) Math.ceil((double) totalBloques / bloquesPorFila);
+        jPanel1.setPreferredSize(new Dimension(bloquesPorFila*(ancho+margen), filas*(alto+margen)));
+        jPanel1.revalidate();
+        jPanel1.repaint();
+    }
 
-        x += ancho + margen;
-        if ((i + 1) % bloquesPorFila == 0) {
-            x = 10;
-            y += alto + margen;
+
+    // Función recursiva para buscar qué archivo ocupa un bloque
+    private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
+        LinkedList archivos = dir.getArchivos();
+        for (int i = 0; i < archivos.getLength(); i++) {
+            Archivo archivo = (Archivo) archivos.getElementIn(i);
+            int actual = archivo.getPrimerBloque();
+            int cont = 0;
+            while (actual != -1 && cont < archivo.getTamanioBloques()) {
+                if (actual == bloqueId) return archivo;
+                actual = sistema.getDisco().getBloques()[actual].getSiguiente();
+                cont++;
+            }
         }
-    }
 
-    int filas = (int) Math.ceil((double) totalBloques / bloquesPorFila);
-    jPanel1.setPreferredSize(new Dimension(bloquesPorFila*(ancho+margen), filas*(alto+margen)));
-    jPanel1.revalidate();
-    jPanel1.repaint();
-    
-
-}
-
-
-
-// Función recursiva para buscar qué archivo ocupa un bloque
-private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
-    LinkedList archivos = dir.getArchivos();
-    for (int i = 0; i < archivos.getLength(); i++) {
-        Archivo archivo = (Archivo) archivos.getElementIn(i);
-        int actual = archivo.getPrimerBloque();
-        int cont = 0;
-        while (actual != -1 && cont < archivo.getTamanioBloques()) {
-            if (actual == bloqueId) return archivo;
-            actual = sistema.getDisco().getBloques()[actual].getSiguiente();
-            cont++;
+        // Subdirectorios
+        LinkedList subs = dir.getSubdirectorios();
+        for (int i = 0; i < subs.getLength(); i++) {
+            Archivo encontrado = buscarArchivoPorBloque((Directorio) subs.getElementIn(i), bloqueId);
+            if (encontrado != null) return encontrado;
         }
+
+        return null; // no encontrado
     }
 
-    // Subdirectorios
-    LinkedList subs = dir.getSubdirectorios();
-    for (int i = 0; i < subs.getLength(); i++) {
-        Archivo encontrado = buscarArchivoPorBloque((Directorio) subs.getElementIn(i), bloqueId);
-        if (encontrado != null) return encontrado;
-    }
-
-    return null; // no encontrado
-}
-
-
-
     
-
-
-    
-    public void llenarTablaAsignacion(SistemaArchivos sistema) {
+    public void llenarTablaAsignacion() {
         DefaultTableModel modelo = (DefaultTableModel) tablaAsignacion.getModel();
         modelo.setRowCount(0); // Limpia la tabla antes
 
@@ -382,7 +421,6 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
             }
         };
 
-        // ==== Colores bonitos ====
         renderer.setTextSelectionColor(Color.WHITE);
         renderer.setBackgroundSelectionColor(new Color(51, 153, 255));
         renderer.setBorderSelectionColor(Color.WHITE);
@@ -391,38 +429,37 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
     }
     
     private void mostrarInfoSeleccionada() {
-    DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) arbol.getLastSelectedPathComponent();
-    if (nodo == null) return;
+        DefaultMutableTreeNode nodo = (DefaultMutableTreeNode) arbol.getLastSelectedPathComponent();
+        if (nodo == null) return;
 
-    Object obj = nodo.getUserObject();
-    
-    jPanel2.removeAll(); // limpiar panel antes de mostrar nueva info
-    jPanel2.setLayout(new java.awt.GridLayout(0, 1, 5, 5)); // layout vertical simple
+        Object obj = nodo.getUserObject();
 
-    if (obj instanceof Archivo) {
-        Archivo archivo = (Archivo) obj;
-        
-        JLabel lblNombre = new JLabel("Nombre: " + archivo.getNombre());
-        JLabel lblTam = new JLabel("Tamaño en bloques: " + archivo.getTamanioBloques());
-        JLabel lblPrimerBloque = new JLabel("Primer bloque: " + archivo.getPrimerBloque());
-        JLabel lblOwner = new JLabel("Propietario: " + archivo.getOwner().getNombreProceso());
-        
-        jPanel2.add(lblNombre);
-        jPanel2.add(lblTam);
-        jPanel2.add(lblPrimerBloque);
-        jPanel2.add(lblOwner);
-        
-    } else if (obj instanceof Directorio) {
-        Directorio dir = (Directorio) obj;
-        JLabel lblDir = new JLabel("Directorio: " + dir.getNombre());
-        jPanel2.add(lblDir);
+        jPanel2.removeAll(); // limpiar panel antes de mostrar nueva info
+        jPanel2.setLayout(new java.awt.GridLayout(0, 1, 5, 5)); // layout vertical simple
+
+        if (obj instanceof Archivo) {
+            Archivo archivo = (Archivo) obj;
+
+            JLabel lblNombre = new JLabel("Nombre: " + archivo.getNombre());
+            JLabel lblTam = new JLabel("Tamaño en bloques: " + archivo.getTamanioBloques());
+            JLabel lblPrimerBloque = new JLabel("Primer bloque: " + archivo.getPrimerBloque());
+            JLabel lblOwner = new JLabel("Propietario: " + archivo.getOwner().getNombreProceso());
+
+            jPanel2.add(lblNombre);
+            jPanel2.add(lblTam);
+            jPanel2.add(lblPrimerBloque);
+            jPanel2.add(lblOwner);
+
+        } else if (obj instanceof Directorio) {
+            Directorio dir = (Directorio) obj;
+            JLabel lblDir = new JLabel("Directorio: " + dir.getNombre());
+            jPanel2.add(lblDir);
+        }
+
+        jPanel2.revalidate();
+        jPanel2.repaint();
     }
-
-    jPanel2.revalidate();
-    jPanel2.repaint();
-}
-
-
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -477,6 +514,11 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         bar.add(directorio);
 
         editar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/editar.png"))); // NOI18N
+        editar.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                editarMouseClicked(evt);
+            }
+        });
         bar.add(editar);
 
         delete.setIcon(new javax.swing.ImageIcon(getClass().getResource("/GUI/eliminar.png"))); // NOI18N
@@ -512,6 +554,11 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
         explorador.setMinimumSize(new java.awt.Dimension(280, 440));
         explorador.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
+        arbol.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                arbolMousePressed(evt);
+            }
+        });
         jScrollPane2.setViewportView(arbol);
 
         explorador.add(jScrollPane2, new org.netbeans.lib.awtextra.AbsoluteConstraints(20, 30, 260, 340));
@@ -557,14 +604,158 @@ private Archivo buscarArchivoPorBloque(Directorio dir, int bloqueId) {
     }//GEN-LAST:event_userTypeMousePressed
 
     private void addMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_addMouseClicked
-        New ui = new New(sistema, this);
-        ui.setVisible(true);
+        //New ui = new New(sistema, this);
+        //ui.setVisible(true);
+            // Seleccionar el directorio donde se creará el archivo
+        var path = arbol.getSelectionPath();
+        if (path == null) {
+            JOptionPane.showMessageDialog(this, "Seleccione un directorio primero.");
+            return;
+        }
+
+        var nodo = (DefaultMutableTreeNode) path.getLastPathComponent();
+        Object obj = nodo.getUserObject();
+
+        // Solo permitir crear archivos dentro de directorios
+        if (!(obj instanceof Directorio dirDestino)) {
+            JOptionPane.showMessageDialog(this, "Debe seleccionar un directorio para crear un archivo.");
+            return;
+        }
+
+        // Abrir ventana de creación (nombre y tamaño)
+        new CrearArchivo(this, (nombreArchivo, tamEnBloques) -> {
+
+            sistema.crearProceso(
+                "proc_create_" + nombreArchivo,   // nombre del proceso
+                "createFile",                     // operación
+                nombreArchivo,                    // nombre del archivo
+                tamEnBloques,                     // tamaño en bloques
+                dirDestino,                       // directorio destino
+                "admin",                         
+                null                               // extra (no usado)
+            );
+
+        }).setVisible(true);
     }//GEN-LAST:event_addMouseClicked
 
     private void deleteMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteMouseClicked
-        Delete ui = new Delete(sistema, this);
-        ui.setVisible(true);
+        //Delete ui = new Delete(sistema, this);
+        //ui.setVisible(true);
+        if (isAdmin){
+            var path = arbol.getSelectionPath();
+            if (path == null) {
+                JOptionPane.showMessageDialog(this, "Seleccione un archivo o directorio primero.");
+                return;
+            }
+
+            var nodo = (DefaultMutableTreeNode) path.getLastPathComponent();
+            Object obj = nodo.getUserObject();
+
+            new Delete2(this, obj, () -> {
+
+                // ===== ARCHIVO =====
+                if (obj instanceof Archivo) {
+                    Archivo archivo = (Archivo) obj;
+                    Directorio padre = archivo.getPadre();
+
+                    if (padre == null) {
+                        JOptionPane.showMessageDialog(this, "No se puede eliminar el archivo raíz.");
+                        return;
+                    }
+
+                    // Crear proceso px_delete
+                    sistema.crearProceso(
+                            "px_delete",
+                            "deleteFile",
+                            archivo.getNombre(),
+                            0,
+                            padre,
+                            "admin",
+                            null
+                    );
+
+                } 
+                // ===== DIRECTORIO =====
+                else if (obj instanceof Directorio) {
+                    Directorio dir = (Directorio) obj;
+                    Directorio padre = dir.getPadre();
+
+                    if (padre == null) {
+                        JOptionPane.showMessageDialog(this, "No se puede eliminar el directorio raíz.");
+                        return;
+                    }
+
+                    // Crear proceso px_delete
+                    sistema.crearProceso(
+                            "px_delete",
+                            "deleteDir",
+                            dir.getNombre(),
+                            0,
+                            padre,
+                            "admin",
+                           null
+                    );
+                } 
+                else {
+                    JOptionPane.showMessageDialog(this, "Tipo de objeto no válido.");
+                    return;
+                }
+
+            }).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Debes ser administrador para eliminar archivos o directorios.");
+        }
     }//GEN-LAST:event_deleteMouseClicked
+
+    private void arbolMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_arbolMousePressed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_arbolMousePressed
+
+    private void editarMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_editarMouseClicked
+        // TODO add your handling code here:
+        // Obtener nodo seleccionado
+        if (isAdmin) {
+            var path = arbol.getSelectionPath();
+            if (path == null) {
+                JOptionPane.showMessageDialog(this, "Seleccione un archivo o directorio primero.");
+                return;
+            }
+
+            var nodo = (DefaultMutableTreeNode) path.getLastPathComponent();
+            Object obj = nodo.getUserObject();
+
+            // Nombre actual
+            String nombreActual;
+            Directorio dirPadre;
+
+            if (obj instanceof Archivo a) {
+                nombreActual = a.getNombre();
+                dirPadre = a.getPadre();     
+            } else if (obj instanceof Directorio d) {
+                nombreActual = d.getNombre();
+                dirPadre = d.getPadre();     
+            } else {
+                return;
+            }
+
+            new Edit(this, obj, nuevoNombre -> {
+
+                // Crear proceso UPDATE
+                sistema.crearProceso(
+                    "P_UPDATE_" + nombreActual,
+                    "update",
+                    nombreActual,   // nombre viejo
+                    0,              
+                    dirPadre,       
+                    "admin",
+                    nuevoNombre     // para setearlo en crear proceso
+                );
+
+            }).setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(this, "Debes ser administrador para editar archivos o directorios.");
+        }
+    }//GEN-LAST:event_editarMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

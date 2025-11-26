@@ -3,14 +3,20 @@
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/simuladorsistemadearchivos/SimuladorSistemaDeArchivos.java</file>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/FileSystem/Directorio.java</file>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/GUI/New.java</file>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/Disk/Bloque.java</file>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/GUI/SimuladorSistArchivos.java</file>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/Scheduler/PlanificadorES.java</file>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/Disk/Disco.java</file>
-            <file>file:/C:/Users/Jose/Documents/Simulador-Sistema-de-Archivos/src/FileSystem/SistemaArchivos.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/GUI/Delete2.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/GUI/Edit.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/simuladorsistemadearchivos/SimuladorSistemaDeArchivos.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/FileSystem/Directorio.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/GUI/SimuladorSistArchivos.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/Scheduler/PlanificadorES.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/FileSystem/Archivo.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/GUI/CrearArchivo.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/FileSystem/SistemaArchivos.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/Disk/Disco.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/GUI/New.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/Process/Proceso.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/GUI/Delete.java</file>
+            <file>file:/C:/Users/vivia/OneDrive/Escritorio/Simulador-Sistema-de-Archivos/src/Disk/Bloque.java</file>
         </group>
     </open-files>
 </project-private>

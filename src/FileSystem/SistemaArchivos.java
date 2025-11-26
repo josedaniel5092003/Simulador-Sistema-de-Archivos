@@ -1,6 +1,7 @@
 
 package FileSystem;
 
+import DataStruct.Nodo;
 import DataStruct.Queue;
 import Process.Proceso;
 import Disk.Disco;
@@ -29,41 +30,35 @@ public class SistemaArchivos {
         colaProcesos = new Queue();
     }
 
-    // -----------------------------
-    //   GESTIÓN DE PROCESOS
-    // -----------------------------
+    public void crearProceso(String nombreProc, String operacion, String nombre, int tamanio, Directorio dir, String usuario, String nuevoNombre) {
 
-    public void crearProceso(String nombreProc, String operacion, String nombre, int tamanio, Directorio dir, String usuario, int prioridad) {
+        Proceso p = new Proceso(
+            contadorProcesos++,
+            nombreProc,
+            operacion,
+            nombre,
+            tamanio,
+            dir,
+            usuario
+        );
+        
+        p.setNuevoNombre(nuevoNombre);
 
-    Proceso p = new Proceso(
-        contadorProcesos++,
-        nombreProc,
-        operacion,
-        nombre,
-        tamanio,
-        dir,
-        usuario,
-        prioridad
-    );
+        if (operacion.equals("read") || operacion.equals("delete")) {
 
-    // ======== PREPARACIÓN PARA SSTF =========
-    if (operacion.equals("read") || operacion.equals("delete")) {
+            Archivo a = dir.buscarArchivoPorNombre(nombre);
 
-        Archivo a = dir.buscarArchivoPorNombre(nombre);
-
-        if (a != null) {
-            p.setBloqueObjetivo(a.getPrimerBloque());
-        } else {
-            // si el archivo no existe dejamos -1, SSTF lo ignorará
-            p.setBloqueObjetivo(-1);
+            if (a != null) {
+                p.setBloqueObjetivo(a.getPrimerBloque());
+            } else {
+                // si el archivo no existe se deja -1, SSTF lo ignorará
+                p.setBloqueObjetivo(-1);
+            }
         }
+
+        colaProcesos.enqueue(p);
+        System.out.println("Proceso agregado a la cola: " + p);
     }
-
-    // ========================================
-
-    colaProcesos.enqueue(p);
-    System.out.println("Proceso agregado a la cola: " + p);
-}
 
 
     public Proceso getSiguienteProceso() {
@@ -88,10 +83,6 @@ public class SistemaArchivos {
         }
     }
 
-    // ---------------------------------------
-    //   EJECUCIÓN DE OPERACIONES DEL PROCESO
-    // ---------------------------------------
-
     public boolean ejecutarOperacion(Proceso p) {
 
         switch (p.getOperacion()) {
@@ -104,7 +95,7 @@ public class SistemaArchivos {
                 p
             );
 
-            // 🟨 Actualizar posición del cabezal y bloque objetivo para SSTF
+            // Actualizar posición del cabezal y bloque objetivo para SSTF
             if (creado) {
                 Archivo a = p.getDestino().buscarArchivoPorNombre(p.getNombre());
                 if (a != null) {
@@ -117,13 +108,12 @@ public class SistemaArchivos {
 
             return creado;
 
-
             case "createDir":
                 return crearDirectorio(
-                    p.getNombreProceso(),
                     p.getNombre(),
                     p.getDestino(),
-                    p.getUsuario()
+                    p.getUsuario(),
+                    p
                 );
 
             case "read":
@@ -132,62 +122,90 @@ public class SistemaArchivos {
                 System.out.println(leerArchivo(p.getNombre(), p.getDestino()));
                 return true;
 
-            case "delete":
+            case "deleteFile":
                 Archivo a2 = p.getDestino().buscarArchivoPorNombre(p.getNombre());
                 if (a2 != null) p.setBloqueObjetivo(a2.getPrimerBloque());
                 return eliminarArchivo(p.getNombre(), p.getDestino());
+                
+            case "deleteDir":
+                Directorio dirAEliminar = p.getDestino().buscarDirectorioPorNombre(p.getNombre());
 
+                if (dirAEliminar != null) {
+                    return eliminarDirectorio(p.getNombre(), p.getDestino());
+                }
+                
+            case "update":
+                // Buscar archivo o directorio
+                Object objetivo = p.getDestino().buscarArchivoPorNombre(p.getNombre());
+                if (objetivo == null) {
+                    objetivo = p.getDestino().buscarDirectorioPorNombre(p.getNombre());
+                }
+
+                if (objetivo == null) {
+                    System.out.println("No existe el elemento a actualizar.");
+                    return false;
+                }
+
+                // Si es archivo → asignar bloque objetivo para SSTF
+                if (objetivo instanceof Archivo arch) {
+                    p.setBloqueObjetivo(arch.getPrimerBloque());
+                    disco.setHeadPosition(arch.getPrimerBloque());
+
+                    // Renombrar archivo
+                    System.out.println(p.getNuevoNombre());
+                    arch.setNombre(p.getNuevoNombre());
+                    return true;
+                }
+
+                // Si es directorio
+                if (objetivo instanceof Directorio dir) {
+                    dir.setNombre(p.getNuevoNombre());
+                    return true;
+                }
+
+                return false;
+                
             default:
                 System.out.println("Operación no reconocida");
                 return false;
         }
     }
 
-    // -----------------------------
-    //   CRUD REAL DEL SISTEMA
-    // -----------------------------
-
     public boolean crearArchivo(String nombre, int bloques, Directorio dirActual, Proceso proceso) {
 
-    if (dirActual.buscarArchivoPorNombre(nombre) != null) {
-        System.out.println("Ya existe un archivo con ese nombre.");
-        return false;
+        if (dirActual.buscarArchivoPorNombre(nombre) != null) {
+            System.out.println("Ya existe un archivo con ese nombre.");
+            return false;
+        }
+
+        int inicio = disco.asignarBloques(bloques);
+
+        if (inicio == -1) {
+            System.out.println("No hay espacio disponible.");
+            return false;
+        }
+
+        // ACTUALIZAR POSICIÓN DEL CABEZAL PARA SSTF
+        disco.setHeadPosition(inicio);
+
+        Archivo nuevo = new Archivo(nombre, bloques, inicio, proceso, dirActual);
+        dirActual.agregarArchivo(nuevo);
+
+        System.out.println(
+            "Archivo creado: " + nombre +
+            " | Bloques: " + bloques +
+            " | Primer bloque: " + inicio
+        );
+
+        return true;
     }
 
-    int inicio = disco.asignarBloques(bloques);
-
-    if (inicio == -1) {
-        System.out.println("No hay espacio disponible.");
-        return false;
-    }
-
-    // 🟨 ACTUALIZAR POSICIÓN DEL CABEZAL PARA SSTF
-    disco.setHeadPosition(inicio);
-
-    Archivo nuevo = new Archivo(nombre, bloques, inicio, proceso);
-    dirActual.agregarArchivo(nuevo);
-
-    System.out.println(
-        "Archivo creado: " + nombre +
-        " | Bloques: " + bloques +
-        " | Primer bloque: " + inicio
-    );
-
-    return true;
-}
-
-
-
-    public boolean crearDirectorio(String nombreProc, String nombre, Directorio padre, String usuario) {
+    public boolean crearDirectorio(String nombre, Directorio padre, String usuario, Proceso creador) {
 
         if (padre.buscarSubdirectorio(nombre) != null) {
             System.out.println("Ya existe un directorio con ese nombre.");
             return false;
         }
-
-        Proceso creador = new Proceso(
-            -1, nombreProc, "createDir", nombre, 0, padre, usuario
-        );
 
         Directorio nuevo = new Directorio(nombre, padre, creador);
         padre.agregarSubdirectorio(nuevo);
@@ -199,48 +217,83 @@ public class SistemaArchivos {
 
     public String leerArchivo(String nombre, Directorio dirActual) {
 
-    Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
+        Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
 
-    if (archivo == null) {
-        return "El archivo \"" + nombre + "\" no existe.";
+        if (archivo == null) {
+            return "El archivo \"" + nombre + "\" no existe.";
+        }
+
+        // MOVER EL CABEZAL AL PRIMER BLOQUE DEL ARCHIVO
+        disco.setHeadPosition(archivo.getPrimerBloque());
+
+        StringBuilder info = new StringBuilder();
+        info.append("Archivo: ").append(archivo.getNombre()).append("\n");
+        info.append("Propietario: ").append(archivo.getOwner()).append("\n");
+        info.append("Tamaño: ").append(archivo.getTamanioBloques()).append(" bloques\n");
+        info.append("Bloques: ").append(obtenerCadenaBloques(archivo.getPrimerBloque())).append("\n");
+
+        return info.toString();
     }
-
-    // 🟨 MOVER EL CABEZAL AL PRIMER BLOQUE DEL ARCHIVO
-    disco.setHeadPosition(archivo.getPrimerBloque());
-
-    StringBuilder info = new StringBuilder();
-    info.append("Archivo: ").append(archivo.getNombre()).append("\n");
-    info.append("Propietario: ").append(archivo.getOwner()).append("\n");
-    info.append("Tamaño: ").append(archivo.getTamanioBloques()).append(" bloques\n");
-    info.append("Bloques: ").append(obtenerCadenaBloques(archivo.getPrimerBloque())).append("\n");
-
-    return info.toString();
-}
-
-
 
     public boolean eliminarArchivo(String nombre, Directorio dirActual) {
 
-    Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
+        Archivo archivo = dirActual.buscarArchivoPorNombre(nombre);
 
-    if (archivo == null) {
-        System.out.println("El archivo no existe.");
-        return false;
+        if (archivo == null) {
+            System.out.println("El archivo no existe.");
+            return false;
+        }
+
+        // MOVER EL CABEZAL AL PRIMER BLOQUE DEL ARCHIVO ANTES DE ELIMINAR
+        disco.setHeadPosition(archivo.getPrimerBloque());
+
+        // Liberar bloques del disco
+        disco.liberarBloques(archivo.getPrimerBloque());
+
+        // Quitar el archivo del directorio
+        dirActual.removerArchivo(archivo);
+
+        System.out.println("Archivo eliminado: " + nombre);
+        return true;
     }
+    
+    public boolean eliminarDirectorio(String nombre, Directorio dirActual) {
 
-    // 🟨 MOVER EL CABEZAL AL PRIMER BLOQUE DEL ARCHIVO ANTES DE ELIMINAR
-    disco.setHeadPosition(archivo.getPrimerBloque());
+        Directorio dir = dirActual.buscarDirectorioPorNombre(nombre);
 
-    // Liberar bloques del disco
-    disco.liberarBloques(archivo.getPrimerBloque());
+        if (dir == null) {
+            System.out.println("El directorio no existe.");
+            return false;
+        }
 
-    // Quitar el archivo del directorio
-    dirActual.removerArchivo(archivo);
+        // Elimina todos los archivos dentro del directorio
+        Nodo<Archivo> nodoA = dir.getArchivos().getFirst();
+        while (nodoA != null) {
+            Archivo archivo = nodoA.getElement();
 
-    System.out.println("Archivo eliminado: " + nombre);
-    return true;
-}
+            // eliminarArchivo() mueve el cabezal
+            eliminarArchivo(archivo.getNombre(), dir);
 
+            nodoA = nodoA.getNext();
+        }
+
+        // Elimina todos los subdirectorios recursivamente
+        Nodo<Directorio> nodoD = dir.getSubdirectorios().getFirst();
+        while (nodoD != null) {
+            Directorio sub = nodoD.getElement();
+
+            // Llamada recursiva
+            eliminarDirectorio(sub.getNombre(), dir);
+
+            nodoD = nodoD.getNext();
+        }
+
+        // Remover el directorio del padre
+        dirActual.removerSubdirectorio(dir);
+
+        System.out.println("Directorio eliminado: " + nombre);
+        return true;
+    }
 
     private String obtenerCadenaBloques(int primerBloque) {
 

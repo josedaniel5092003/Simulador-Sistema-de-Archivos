@@ -47,7 +47,7 @@ public class PlanificadorES {
 
     private Proceso obtenerUltimoProceso() {
 
-        var cola = sistema.getColaProcesos(); // <--- ESTE SÍ EXISTE
+        var cola = sistema.getColaProcesos(); 
 
         if (cola.isEmpty()) return null;
 
@@ -96,8 +96,6 @@ public class PlanificadorES {
 
         sistema.ejecutarOperacion(p);
     }
-    
-    
 }
     
     private Proceso obtenerProcesoEnPosicion(int index) {
@@ -199,44 +197,44 @@ public void prepararProcesoParaSSTF(Proceso p) {
     }
 }
 
-public void ejecutarPrioridad() {
-
-    var cola = sistema.getColaProcesos();
-    if (cola.isEmpty()) return;
-
-    while (!cola.isEmpty()) {
-
-        Proceso mejor = null;
-        int mejorPrioridad = Integer.MAX_VALUE;
-
-        Nodo actual = cola.getHead();
-
-        // recorrer toda la cola para encontrar el proceso con mayor prioridad
-        while (actual != null) {
-            Proceso p = (Proceso) actual.getElement();
-
-            if (p.getPrioridad() < mejorPrioridad) {
-                mejorPrioridad = p.getPrioridad();
-                mejor = p;
-            }
-
-            actual = actual.getNext();
-        }
-
-        // si por alguna razón no encontramos ninguno (no debería pasar), tomamos el primero
-        if (mejor == null) {
-            mejor = (Proceso) cola.getHead().getElement();
-        }
-
-        System.out.println("\n[Planificador Prioridad] Atendiendo: " + mejor);
-
-        // ejecutar operación
-        sistema.ejecutarOperacion(mejor);
-
-        // quitar de la cola
-        cola.remove(mejor);
-    }
-}
+//public void ejecutarPrioridad() {
+//
+//    var cola = sistema.getColaProcesos();
+//    if (cola.isEmpty()) return;
+//
+//    while (!cola.isEmpty()) {
+//
+//        Proceso mejor = null;
+//        int mejorPrioridad = Integer.MAX_VALUE;
+//
+//        Nodo actual = cola.getHead();
+//
+//        // recorrer toda la cola para encontrar el proceso con mayor prioridad
+//        while (actual != null) {
+//            Proceso p = (Proceso) actual.getElement();
+//
+//            if (p.getPrioridad() < mejorPrioridad) {
+//                mejorPrioridad = p.getPrioridad();
+//                mejor = p;
+//            }
+//
+//            actual = actual.getNext();
+//        }
+//
+//        // si por alguna razón no encontramos ninguno (no debería pasar), tomamos el primero
+//        if (mejor == null) {
+//            mejor = (Proceso) cola.getHead().getElement();
+//        }
+//
+//        System.out.println("\n[Planificador Prioridad] Atendiendo: " + mejor);
+//
+//        // ejecutar operación
+//        sistema.ejecutarOperacion(mejor);
+//
+//        // quitar de la cola
+//        cola.remove(mejor);
+//    }
+//}
 
 
 

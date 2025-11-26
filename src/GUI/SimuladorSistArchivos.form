@@ -82,6 +82,9 @@
               <Image iconType="3" name="/GUI/editar.png"/>
             </Property>
           </Properties>
+          <Events>
+            <EventHandler event="mouseClicked" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="editarMouseClicked"/>
+          </Events>
         </Component>
         <Component class="javax.swing.JLabel" name="delete">
           <Properties>
@@ -162,6 +165,9 @@
           <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
           <SubComponents>
             <Component class="javax.swing.JTree" name="arbol">
+              <Events>
+                <EventHandler event="mousePressed" listener="java.awt.event.MouseListener" parameters="java.awt.event.MouseEvent" handler="arbolMousePressed"/>
+              </Events>
             </Component>
           </SubComponents>
         </Container>

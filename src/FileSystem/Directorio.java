@@ -28,6 +28,7 @@ public class Directorio {
         this.archivos = new LinkedList<>();
     }
     
+    // Busca un archivo por su nombre
     public Archivo buscarArchivoPorNombre(String nombreArchivo) {
         Nodo<Archivo> nodo = archivos.getFirst();   // primer nodo de la lista
         int total = archivos.getLength();           // número de elementos
@@ -35,7 +36,7 @@ public class Directorio {
         for (int i = 0; i < total && nodo != null; i++) {
             Archivo a = nodo.getElement();          // obtenemos el objeto Archivo
             if (a.getNombre().equalsIgnoreCase(nombreArchivo)) {
-                return a;                           // encontrado ✅
+                return a;                           // encontrado
             }
             nodo = nodo.getNext();                  // avanzar al siguiente
         }
@@ -43,7 +44,8 @@ public class Directorio {
         return null; // si no lo encontró
     }
     
-       public boolean removerArchivo(Archivo objetivo) {
+    // Elimina un archivo
+    public boolean removerArchivo(Archivo objetivo) {
         Nodo<Archivo> prev = null;
         Nodo<Archivo> curr = archivos.getFirst();
         int len = archivos.getLength();
@@ -65,8 +67,9 @@ public class Directorio {
         }
         return false;
     }
-       
-       public Directorio buscarSubdirectorio(String nombreDir) {
+    
+    // Busca un subdirectorio específico del actual 
+    public Directorio buscarSubdirectorio(String nombreDir) {
         Nodo<Directorio> nodo = subdirectorios.getFirst();
         int total = subdirectorios.getLength();
 
@@ -80,7 +83,7 @@ public class Directorio {
         return null;
     }
        
-        /** Elimina un subdirectorio específico del actual */
+    // Elimina un subdirectorio específico del actual 
     public boolean removerSubdirectorio(Directorio objetivo) {
         Nodo<Directorio> prev = null;
         Nodo<Directorio> curr = subdirectorios.getFirst();
@@ -107,7 +110,7 @@ public class Directorio {
     public Directorio buscarDirectorioPorNombre(String nombreBuscado) {
         if (subdirectorios == null) return null;
 
-        var nodo = subdirectorios.getFirst(); // tu nodo de lista personalizada
+        var nodo = subdirectorios.getFirst(); 
 
         while (nodo != null) {
             Directorio dir = (Directorio) nodo.getElement();
@@ -166,10 +169,16 @@ public class Directorio {
         return this.nombre;
     }
     
+    public void setNombre(String nuevoNombre) {
+        this.nombre = nuevoNombre;
+    }
+    
+    
     @Override
     public String toString() {
         return nombre;
     }
+
     
     
 

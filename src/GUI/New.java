@@ -3,8 +3,6 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/GUIForms/JFrame.java to edit this template
  */
 package GUI;
-import Disk.Disco;
-import simuladorsistemadearchivos.SimuladorSistemaDeArchivos;
 import FileSystem.SistemaArchivos;
 import javax.swing.JOptionPane;
 import FileSystem.Directorio;
@@ -23,12 +21,14 @@ public class New extends javax.swing.JFrame {
     /**
      * Creates new form New
      */
-    public New(SistemaArchivos sistema, SimuladorSistArchivos mainUI) {
-        this.sistema = sistema;
-        this.mainUI = mainUI;  
+    public New(SistemaArchivos sistema, SimuladorSistArchivos mainUI) {  
         initComponents();
-         cargarDirectoriosEnComboBox();
-         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        this.sistema = sistema;
+        this.mainUI = mainUI;
+        setLocationRelativeTo(null);
+        this.setResizable(false);
+        cargarDirectoriosEnComboBox();
+        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         
     }
 
@@ -59,7 +59,7 @@ public class New extends javax.swing.JFrame {
         jLabel1.setText(" Crear Archivo ");
         jPanel1.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(70, 10, 250, 50));
 
-        jLabel2.setText("Tamaño Archivo");
+        jLabel2.setText("Tamaño Archivo (KB)");
         jPanel1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 190, -1, -1));
 
         jLabel3.setText("Directorio");
@@ -76,13 +76,27 @@ public class New extends javax.swing.JFrame {
         });
         jPanel1.add(jButton1, new org.netbeans.lib.awtextra.AbsoluteConstraints(160, 250, -1, -1));
 
-        jComboBox1.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
+        jComboBox1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBox1ActionPerformed(evt);
+            }
+        });
         jPanel1.add(jComboBox1, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 90, -1, -1));
 
         jTextField1.setText("jTextField1");
+        jTextField1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField1ActionPerformed(evt);
+            }
+        });
         jPanel1.add(jTextField1, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 150, -1, -1));
 
         jTextField2.setText("jTextField2");
+        jTextField2.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jTextField2ActionPerformed(evt);
+            }
+        });
         jPanel1.add(jTextField2, new org.netbeans.lib.awtextra.AbsoluteConstraints(250, 190, -1, -1));
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -138,24 +152,25 @@ public class New extends javax.swing.JFrame {
             bloques,
             destino,
             "admin",
-            5
+            null
     );
-    
-    PlanificadorES planificador = new PlanificadorES(sistema);
-    while (sistema.hayProcesosPendientes()) {
-        planificador.ejecutarPrioridad();
-    }
-    if (mainUI != null) {
-        mainUI.actualizarArbol();
-        mainUI.llenarTablaAsignacion(sistema);
-        mainUI.dibujarDisco();
-    }
 
-    // 3️⃣ Actualizar interfaz
     cargarDirectoriosEnComboBox();
 
-    JOptionPane.showMessageDialog(this, "Proceso creado correctamente");
+    JOptionPane.showMessageDialog(this, "Solicitud creada correctamente");
     }//GEN-LAST:event_jButton1ActionPerformed
+
+    private void jTextField1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField1ActionPerformed
+
+    private void jComboBox1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBox1ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jComboBox1ActionPerformed
+
+    private void jTextField2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jTextField2ActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_jTextField2ActionPerformed
 
     /**
      * @param args the command line arguments
