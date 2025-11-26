@@ -5,6 +5,10 @@ import DataStruct.Nodo;
 import DataStruct.Queue;
 import Process.Proceso;
 import Disk.Disco;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonArray;
+import java.io.File;
 
 public class SistemaArchivos {
 
@@ -314,6 +318,171 @@ public class SistemaArchivos {
         sb.append("]");
         return sb.toString();
     }
+    
+    public void cargarDesdeJson(File archivoJson) throws Exception {
+
+    com.google.gson.Gson gson = new com.google.gson.Gson();
+
+    // leer archivo
+    String contenido = java.nio.file.Files.readString(archivoJson.toPath());
+    com.google.gson.JsonObject json = gson.fromJson(contenido, com.google.gson.JsonObject.class);
+
+    // ================================
+    // RECREAR DISCO
+    // ================================
+    int tamDisco = json.get("tamanioDisco").getAsInt();
+    this.disco = new Disk.Disco(tamDisco);
+
+    // ================================
+    // RECREAR ROOT
+    // ================================
+    this.root = new Directorio("root", null, pRoot);
+
+    // Mapa para encontrar directorios por ruta
+    java.util.Map<String, Directorio> mapaDirs = new java.util.HashMap<>();
+    mapaDirs.put("/", root);
+
+    // ================================
+    // CARGAR DIRECTORIOS
+    // ================================
+    com.google.gson.JsonArray dirs = json.getAsJsonArray("directorios");
+
+    for (int i = 0; i < dirs.size(); i++) {
+
+        var d = dirs.get(i).getAsJsonObject();
+
+        String nombre = d.get("nombre").getAsString();
+        String padreRuta = d.get("padre").getAsString();  // por ejemplo "/Documentos"
+
+        Directorio padre = mapaDirs.getOrDefault(padreRuta, root);
+
+        Directorio nuevo = new Directorio(nombre, padre, pRoot);
+        padre.agregarSubdirectorio(nuevo);
+
+        String ruta = padreRuta.equals("/") ? "/" + nombre : padreRuta + "/" + nombre;
+        mapaDirs.put(ruta, nuevo);
+    }
+
+    // ================================
+    // CARGAR ARCHIVOS
+    // ================================
+    com.google.gson.JsonArray archivos = json.getAsJsonArray("archivos");
+
+    for (int i = 0; i < archivos.size(); i++) {
+
+        var a = archivos.get(i).getAsJsonObject();
+
+        String nombre = a.get("nombre").getAsString();
+        int tam = a.get("tamanioBloques").getAsInt();
+        int inicio = a.get("primerBloque").getAsInt();
+        String rutaDir = a.get("directorio").getAsString();
+
+        Directorio d = mapaDirs.get(rutaDir);
+
+        Archivo nuevo = new Archivo(nombre, tam, inicio, pRoot, d);
+        d.agregarArchivo(nuevo);
+
+        Disk.Bloque[] bloques = disco.getBloques();
+
+int actual = inicio;
+for (int b = 0; b < tam - 1; b++) {
+    int sig = actual + 1;              // si tus archivos en JSON están contiguos
+    bloques[actual].setSiguiente(sig);
+    bloques[actual].ocupar();          // marcar bloque como ocupado
+    actual = sig;
+}
+// último bloque
+bloques[actual].setSiguiente(-1);
+bloques[actual].ocupar();
+// si quieres puedes setear contenido del último bloque también
+// bloques[actual].setContenido(nombre);
+    }
+
+    System.out.println(">>> CARGA DESDE JSON COMPLETADA");
+}
+    
+    public void guardarEnJson(File archivoDestino) throws Exception {
+
+    com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+
+    // Tamaño del disco
+    json.addProperty("tamanioDisco", disco.getBloques().length);
+
+    // ===========================
+    // GUARDAR DIRECTORIOS
+    // ===========================
+    com.google.gson.JsonArray listaDirs = new com.google.gson.JsonArray();
+
+    guardarDirectoriosRecursivo(root, "/", listaDirs);
+
+    json.add("directorios", listaDirs);
+
+    // ===========================
+    // GUARDAR ARCHIVOS
+    // ===========================
+    com.google.gson.JsonArray listaArchivos = new com.google.gson.JsonArray();
+
+    guardarArchivosRecursivo(root, "/", listaArchivos);
+
+    json.add("archivos", listaArchivos);
+
+    // ===========================
+    // ESCRIBIR JSON AL ARCHIVO
+    // ===========================
+    String contenido = new com.google.gson.GsonBuilder()
+            .setPrettyPrinting()
+            .create()
+            .toJson(json);
+
+    java.nio.file.Files.writeString(archivoDestino.toPath(), contenido);
+
+    System.out.println(">>> SISTEMA GUARDADO CORRECTAMENTE");
+}
+    
+    private void guardarDirectoriosRecursivo(Directorio dir, String ruta, com.google.gson.JsonArray salida) {
+
+    if (!ruta.equals("/")) { 
+        com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+        obj.addProperty("nombre", dir.getNombre());
+        obj.addProperty("padre", ruta.substring(0, ruta.lastIndexOf("/")));
+        if (obj.get("padre").getAsString().isEmpty()) obj.addProperty("padre", "/");
+
+        salida.add(obj);
+    }
+
+    Nodo<Directorio> nodo = dir.getSubdirectorios().getFirst();
+    while (nodo != null) {
+        Directorio sub = nodo.getElement();
+        guardarDirectoriosRecursivo(sub, ruta + "/" + sub.getNombre(), salida);
+        nodo = nodo.getNext();
+    }
+}
+
+private void guardarArchivosRecursivo(Directorio dir, String ruta, com.google.gson.JsonArray salida) {
+
+    Nodo<Archivo> nodoA = dir.getArchivos().getFirst();
+    while (nodoA != null) {
+        Archivo a = nodoA.getElement();
+
+        com.google.gson.JsonObject obj = new com.google.gson.JsonObject();
+        obj.addProperty("nombre", a.getNombre());
+        obj.addProperty("tamanioBloques", a.getTamanioBloques());
+        obj.addProperty("primerBloque", a.getPrimerBloque());
+        obj.addProperty("directorio", ruta);
+
+        salida.add(obj);
+
+        nodoA = nodoA.getNext();
+    }
+
+    Nodo<Directorio> nodoD = dir.getSubdirectorios().getFirst();
+    while (nodoD != null) {
+        Directorio sub = nodoD.getElement();
+        guardarArchivosRecursivo(sub, ruta + "/" + sub.getNombre(), salida);
+        nodoD = nodoD.getNext();
+    }
+}
+
 
     public Disco getDisco() {
         return disco;

@@ -4,6 +4,9 @@ import FileSystem.Directorio;
 import FileSystem.SistemaArchivos;
 import GUI.SimuladorSistArchivos;
 import Scheduler.PlanificadorES;
+import java.io.File;
+
+
 
 public class SimuladorSistemaDeArchivos {
 
@@ -40,4 +43,9 @@ public class SimuladorSistemaDeArchivos {
             planificador.ejecutarFIFO();
         }
     }
+    
+    
+
+
+
 }
